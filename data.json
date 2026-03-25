@@ -1,0 +1,74 @@
+{
+  "dashboard": {
+    "greeting": "Let's build.",
+    "todayFocus": [],
+    "weeklyGoals": [],
+    "recentActivity": [],
+    "notionLinks": []
+  },
+  "outreach": {
+    "pipeline": {
+      "leads": 0,
+      "contacted": 0,
+      "replied": 0,
+      "meetingsBooked": 0,
+      "closed": 0
+    },
+    "weeklyGoals": [{ "id": "og-1", "title": "Book 3 meetings this week", "current": 0, "target": 3 }],
+    "monthlyGoals": [{ "id": "og-2", "title": "Close 2 new clients this month", "current": 0, "target": 2 }],
+    "todayChecklist": [],
+    "statuses": [
+      { "id": "st-1", "label": "Email Campaign", "value": "OFF", "options": ["ACTIVE", "PAUSED", "TESTING", "OFF"] },
+      { "id": "st-2", "label": "A2P Registration", "value": "PENDING", "options": ["PENDING", "APPROVED"] },
+      { "id": "st-3", "label": "SMS Ads", "value": "OFF", "options": ["ON", "OFF"] }
+    ],
+    "log": [],
+    "notionLinks": []
+  },
+  "clients": [],
+  "clientsNotionLinks": [],
+  "aiSaas": {
+    "description": "HeyGen + ElevenLabs AI clone content system. Test on ourselves first, then offer as a service.",
+    "currentPhase": 0,
+    "phases": [
+      { "name": "Setup", "tasks": [] },
+      { "name": "Automation", "tasks": [] },
+      { "name": "Launch", "tasks": [] },
+      { "name": "Scale", "tasks": [] }
+    ],
+    "weeklyGoals": [{ "id": "ag-1", "title": "Set weekly goal", "current": 0, "target": 1 }],
+    "notes": [],
+    "notionLinks": []
+  },
+  "coaching": {
+    "description": "Build trust through content first, then run ads.",
+    "currentPhase": 0,
+    "phases": ["Brand setup", "Content live", "Ads running", "Scaling"],
+    "tasks": [],
+    "weeklyGoals": [{ "id": "cg-1", "title": "Set weekly goal", "current": 0, "target": 1 }],
+    "monthlyRevenueGoals": [{ "id": "cg-2", "title": "Monthly coaching revenue", "current": 0, "target": 2000 }],
+    "log": [],
+    "notionLinks": []
+  },
+  "youtube": {
+    "channelName": "Atasof AI",
+    "niche": "AI automation for small businesses — tutorials, case studies, behind-the-scenes",
+    "stats": {
+      "subscribers": 0,
+      "videosPublished": 0,
+      "avgViews": 0
+    },
+    "pipeline": {
+      "ideas": [],
+      "scripted": [],
+      "filmed": [],
+      "edited": [],
+      "published": []
+    },
+    "uploadSchedule": "1 video per week",
+    "weeklyGoals": [{ "id": "yg-1", "title": "Set weekly goal", "current": 0, "target": 1 }],
+    "notes": [],
+    "notionLinks": []
+  },
+  "ideas": []
+}
