@@ -3,6 +3,7 @@ import { useState } from 'react'
 export function AddTaskForm({ onAdd, placeholder = 'Add a task...' }) {
   const [text, setText] = useState('')
   const [due, setDue] = useState('')
+  const [assignee, setAssignee] = useState('Both')
 
   function submit(e) {
     e.preventDefault()
@@ -11,6 +12,7 @@ export function AddTaskForm({ onAdd, placeholder = 'Add a task...' }) {
       id: `task-${Date.now()}`,
       title: text.trim(),
       completed: false,
+      assignee,
       ...(due ? { dueDate: due } : {})
     })
     setText('')
@@ -26,12 +28,17 @@ export function AddTaskForm({ onAdd, placeholder = 'Add a task...' }) {
         onChange={e => setText(e.target.value)}
         style={{ flex: 1 }}
       />
+      <select className="select" value={assignee} onChange={e => setAssignee(e.target.value)} style={{ width: 90, fontSize: 12 }}>
+        <option value="Both">Both</option>
+        <option value="William">William</option>
+        <option value="Dad">Dad</option>
+      </select>
       <input
         type="date"
         className="input"
         value={due}
         onChange={e => setDue(e.target.value)}
-        style={{ width: 140, fontSize: 12 }}
+        style={{ width: 130, fontSize: 12 }}
       />
       <button type="submit" className="btn btn-accent" disabled={!text.trim()}>Add</button>
     </form>

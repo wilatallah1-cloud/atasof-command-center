@@ -1,6 +1,8 @@
-import { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
+import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react'
+import { supabase } from '../lib/supabase'
 
 const DataContext = createContext(null)
+const ROW_ID = 'main'
 
 function getNestedValue(obj, path) {
   return path.split('.').reduce((acc, key) => {
@@ -78,26 +80,31 @@ function reducer(state, action) {
           case 'set':
             s = setNestedValue(s, op.path, op.value)
             break
-          case 'add':
+          case 'add': {
             const a1 = getNestedValue(s, op.path)
             if (Array.isArray(a1)) s = setNestedValue(s, op.path, [...a1, op.value])
             break
-          case 'prepend':
+          }
+          case 'prepend': {
             const a2 = getNestedValue(s, op.path)
             if (Array.isArray(a2)) s = setNestedValue(s, op.path, [op.value, ...a2])
             break
-          case 'remove':
+          }
+          case 'remove': {
             const a3 = getNestedValue(s, op.path)
             if (Array.isArray(a3)) s = setNestedValue(s, op.path, a3.filter(i => i.id !== op.id))
             break
-          case 'toggle':
+          }
+          case 'toggle': {
             const a4 = getNestedValue(s, op.path)
             if (Array.isArray(a4)) s = setNestedValue(s, op.path, a4.map(i => i.id === op.id ? { ...i, completed: !i.completed } : i))
             break
-          case 'update':
+          }
+          case 'update': {
             const a5 = getNestedValue(s, op.path)
             if (Array.isArray(a5)) s = setNestedValue(s, op.path, a5.map(i => i.id === op.id ? { ...i, ...op.value } : i))
             break
+          }
         }
       }
       return s
@@ -109,7 +116,6 @@ function reducer(state, action) {
 }
 
 function migrateData(d) {
-  // Migrate single goal objects to arrays
   if (d.outreach?.weeklyGoal && !d.outreach?.weeklyGoals) {
     d.outreach.weeklyGoals = [{ id: 'og-1', ...d.outreach.weeklyGoal }]
     delete d.outreach.weeklyGoal
@@ -134,7 +140,6 @@ function migrateData(d) {
     d.youtube.weeklyGoals = [{ id: 'yg-1', ...d.youtube.weeklyGoal }]
     delete d.youtube.weeklyGoal
   }
-  // Migrate statuses from object to array
   if (d.outreach?.statuses && !Array.isArray(d.outreach.statuses)) {
     const labels = { emailCampaign: 'Email Campaign', a2pRegistration: 'A2P Registration', smsAds: 'SMS Ads' }
     const opts = { emailCampaign: ['ACTIVE', 'PAUSED', 'TESTING', 'OFF'], a2pRegistration: ['PENDING', 'APPROVED'], smsAds: ['ON', 'OFF'] }
@@ -148,75 +153,88 @@ function migrateData(d) {
   return d
 }
 
+async function loadFromSupabase() {
+  if (!supabase) return null
+  try {
+    const { data, error } = await supabase
+      .from('app_state')
+      .select('data')
+      .eq('id', ROW_ID)
+      .single()
+    if (error || !data) return null
+    return data.data
+  } catch {
+    return null
+  }
+}
+
+async function saveToSupabase(state) {
+  if (!supabase) return
+  try {
+    await supabase
+      .from('app_state')
+      .upsert({ id: ROW_ID, data: state, updated_at: new Date().toISOString() })
+  } catch {
+    // silent fail — localStorage is still the backup
+  }
+}
+
 export function DataProvider({ children }) {
   const [data, dispatch] = useReducer(reducer, null)
+  const saveTimer = useRef(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem('atasof-data')
-    if (saved) {
-      try {
-        dispatch({ type: 'SET_ALL', payload: migrateData(JSON.parse(saved)) })
+    async function init() {
+      // 1. Try Supabase first (shared across devices)
+      const remote = await loadFromSupabase()
+      if (remote) {
+        dispatch({ type: 'SET_ALL', payload: migrateData(remote) })
         return
-      } catch {}
+      }
+      // 2. Fall back to localStorage
+      const saved = localStorage.getItem('atasof-data')
+      if (saved) {
+        try {
+          dispatch({ type: 'SET_ALL', payload: migrateData(JSON.parse(saved)) })
+          return
+        } catch {}
+      }
+      // 3. Fall back to data.json
+      fetch('/data.json')
+        .then(r => r.json())
+        .then(d => dispatch({ type: 'SET_ALL', payload: migrateData(d) }))
     }
-    fetch('/data.json')
-      .then(r => r.json())
-      .then(d => dispatch({ type: 'SET_ALL', payload: migrateData(d) }))
+    init()
   }, [])
 
   useEffect(() => {
-    if (data) {
-      localStorage.setItem('atasof-data', JSON.stringify(data))
-    }
+    if (!data) return
+    // Always save to localStorage immediately
+    localStorage.setItem('atasof-data', JSON.stringify(data))
+    // Debounce Supabase saves (2s) to avoid hammering on every keystroke
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => saveToSupabase(data), 2000)
   }, [data])
 
-  const setField = useCallback((path, value) => {
-    dispatch({ type: 'SET_FIELD', path, value })
-  }, [])
-
-  const addToArray = useCallback((path, value) => {
-    dispatch({ type: 'ADD_TO_ARRAY', path, value })
-  }, [])
-
-  const prependToArray = useCallback((path, value) => {
-    dispatch({ type: 'PREPEND_TO_ARRAY', path, value })
-  }, [])
-
-  const removeFromArray = useCallback((path, id) => {
-    dispatch({ type: 'REMOVE_FROM_ARRAY', path, id })
-  }, [])
-
-  const updateInArray = useCallback((path, id, updates) => {
-    dispatch({ type: 'UPDATE_IN_ARRAY', path, id, updates })
-  }, [])
-
-  const toggleTask = useCallback((path, id) => {
-    dispatch({ type: 'TOGGLE_TASK', path, id })
-  }, [])
-
-  const applyOperations = useCallback((operations) => {
-    dispatch({ type: 'APPLY_OPERATIONS', operations })
-  }, [])
-
-  const exportData = useCallback(() => {
-    return JSON.stringify(data, null, 2)
-  }, [data])
-
+  const setField = useCallback((path, value) => dispatch({ type: 'SET_FIELD', path, value }), [])
+  const addToArray = useCallback((path, value) => dispatch({ type: 'ADD_TO_ARRAY', path, value }), [])
+  const prependToArray = useCallback((path, value) => dispatch({ type: 'PREPEND_TO_ARRAY', path, value }), [])
+  const removeFromArray = useCallback((path, id) => dispatch({ type: 'REMOVE_FROM_ARRAY', path, id }), [])
+  const updateInArray = useCallback((path, id, updates) => dispatch({ type: 'UPDATE_IN_ARRAY', path, id, updates }), [])
+  const toggleTask = useCallback((path, id) => dispatch({ type: 'TOGGLE_TASK', path, id }), [])
+  const applyOperations = useCallback((operations) => dispatch({ type: 'APPLY_OPERATIONS', operations }), [])
+  const exportData = useCallback(() => JSON.stringify(data, null, 2), [data])
   const importData = useCallback((json) => {
     try {
-      const parsed = JSON.parse(json)
-      dispatch({ type: 'SET_ALL', payload: parsed })
+      dispatch({ type: 'SET_ALL', payload: JSON.parse(json) })
       return true
-    } catch {
-      return false
-    }
+    } catch { return false }
   }, [])
-
   const resetData = useCallback(() => {
     localStorage.removeItem('atasof-data')
     fetch('/data.json')
       .then(r => r.json())
-      .then(d => dispatch({ type: 'SET_ALL', payload: d }))
+      .then(d => dispatch({ type: 'SET_ALL', payload: migrateData(d) }))
   }, [])
 
   return (

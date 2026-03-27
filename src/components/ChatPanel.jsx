@@ -38,7 +38,7 @@ export default function ChatPanel({ open, onClose }) {
     setLoading(true)
 
     try {
-      const res = await fetch('/.netlify/functions/chat', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -63,7 +63,7 @@ export default function ChatPanel({ open, onClose }) {
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Error: ${err.message}. Make sure your API key is set and the Netlify function is deployed.`
+        content: `Error: ${err.message}. Make sure your Anthropic API key is set correctly.`
       }])
     } finally {
       setLoading(false)
