@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DataProvider, useData } from './context/DataContext'
+import AuthGate from './components/AuthGate'
 import NavBar from './components/NavBar'
 import Dashboard from './pages/Dashboard'
 import Outreach from './pages/Outreach'
@@ -41,8 +42,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <DataProvider>
-      <AppContent />
-    </DataProvider>
+    <AuthGate>
+      <DataProvider>
+        <AppContent />
+      </DataProvider>
+    </AuthGate>
   )
 }

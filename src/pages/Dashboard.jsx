@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useData } from '../context/DataContext'
 import LogEntries from '../components/LogEntries'
 import { AddNoteForm } from '../components/AddItemForm'
@@ -18,19 +19,57 @@ function formatDate() {
   })
 }
 
+const TODAY = new Date().toISOString().split('T')[0]
+
+// Aggregate tasks from all pages that are due today
+function getTodayTasks(data) {
+  const all = []
+
+  // Dashboard own tasks
+  ;(data.dashboard.todayFocus || []).forEach(t => {
+    all.push({ ...t, _source: 'Dashboard', _path: 'dashboard.todayFocus', _type: 'focus' })
+  })
+
+  // Outreach checklist — always today
+  ;(data.outreach.todayChecklist || []).forEach(t => {
+    all.push({ ...t, _source: 'Outreach', _path: 'outreach.todayChecklist', _type: 'task' })
+  })
+
+  // AI SaaS tasks due today
+  ;(data.aiSaas.phases || []).forEach((phase, i) => {
+    ;(phase.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
+      all.push({ ...t, _source: `AI SaaS · ${phase.name}`, _path: `aiSaas.phases.${i}.tasks`, _type: 'task' })
+    })
+  })
+
+  // Coaching tasks due today
+  ;(data.coaching.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
+    all.push({ ...t, _source: 'Coaching', _path: 'coaching.tasks', _type: 'task' })
+  })
+
+  // Client tasks due today
+  ;(data.clients || []).forEach((client, ci) => {
+    ;(client.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
+      all.push({ ...t, _source: client.name, _path: `clients.${ci}.tasks`, _type: 'task' })
+    })
+  })
+
+  return all
+}
+
 function getProjectSummary(data) {
   const summaries = []
   const oc = data.outreach.todayChecklist
   const ocDone = oc.filter(t => t.completed).length
   summaries.push({ name: 'Outreach', pct: oc.length > 0 ? Math.round((ocDone / oc.length) * 100) : 0, next: `${data.outreach.pipeline.meetingsBooked} meetings booked` })
 
-  const allClientTasks = data.clients.flatMap(c => c.tasks)
+  const allClientTasks = data.clients.flatMap(c => c.tasks || [])
   const clientDone = allClientTasks.filter(t => t.completed).length
   summaries.push({ name: 'Clients', pct: allClientTasks.length > 0 ? Math.round((clientDone / allClientTasks.length) * 100) : 0, next: data.clients[0]?.nextAction || 'No clients yet' })
 
   const allSaasTasks = data.aiSaas.phases.flatMap(p => p.tasks)
   const saasDone = allSaasTasks.filter(t => t.completed).length
-  summaries.push({ name: 'AI Content SaaS', pct: allSaasTasks.length > 0 ? Math.round((saasDone / allSaasTasks.length) * 100) : 0, next: allSaasTasks.find(t => !t.completed)?.title || 'No tasks yet' })
+  summaries.push({ name: 'AI SaaS', pct: allSaasTasks.length > 0 ? Math.round((saasDone / allSaasTasks.length) * 100) : 0, next: allSaasTasks.find(t => !t.completed)?.title || 'No tasks yet' })
 
   const coachDone = data.coaching.tasks.filter(t => t.completed).length
   summaries.push({ name: 'Coaching', pct: data.coaching.tasks.length > 0 ? Math.round((coachDone / data.coaching.tasks.length) * 100) : 0, next: data.coaching.tasks.find(t => !t.completed)?.title || 'No tasks yet' })
@@ -42,10 +81,87 @@ function getProjectSummary(data) {
   return summaries
 }
 
+const SOURCE_COLORS = {
+  'Dashboard': 'var(--text-muted)',
+  'Outreach': 'var(--accent)',
+  'Coaching': 'var(--green)',
+  'AI SaaS': 'var(--yellow)',
+}
+
+function sourceColor(src) {
+  for (const [key, val] of Object.entries(SOURCE_COLORS)) {
+    if (src.startsWith(key)) return val
+  }
+  return 'var(--orange)'
+}
+
+const DESTINATIONS = [
+  { label: 'Dashboard', value: 'dashboard' },
+  { label: 'Outreach Checklist', value: 'outreach' },
+  { label: 'AI SaaS (current phase)', value: 'aisaas' },
+  { label: 'Coaching', value: 'coaching' },
+]
+
 export default function Dashboard() {
-  const { data, setField, addToArray, removeFromArray, updateInArray } = useData()
+  const { data, setField, addToArray, removeFromArray, updateInArray, toggleTask } = useData()
   const d = data.dashboard
   const summaries = getProjectSummary(data)
+  const todayTasks = getTodayTasks(data)
+
+  const [newTask, setNewTask] = useState('')
+  const [newDest, setNewDest] = useState('dashboard')
+  const [newAssignee, setNewAssignee] = useState('Both')
+
+  // Compute destinations including each client
+  const destinations = [
+    ...DESTINATIONS,
+    ...data.clients.map(c => ({ label: `Client: ${c.name}`, value: `client:${c.id}` }))
+  ]
+
+  function addTodayTask(e) {
+    e.preventDefault()
+    if (!newTask.trim()) return
+    const base = {
+      id: `task-${Date.now()}`,
+      title: newTask.trim(),
+      completed: false,
+      assignee: newAssignee,
+      dueDate: TODAY,
+      createdAt: new Date().toISOString(),
+    }
+
+    if (newDest === 'dashboard') {
+      addToArray('dashboard.todayFocus', { ...base, source: 'Dashboard' })
+    } else if (newDest === 'outreach') {
+      addToArray('outreach.todayChecklist', base)
+    } else if (newDest === 'aisaas') {
+      const phase = data.aiSaas.currentPhase
+      addToArray(`aiSaas.phases.${phase}.tasks`, base)
+    } else if (newDest === 'coaching') {
+      addToArray('coaching.tasks', base)
+    } else if (newDest.startsWith('client:')) {
+      const clientId = newDest.replace('client:', '')
+      const ci = data.clients.findIndex(c => c.id === clientId)
+      if (ci >= 0) addToArray(`clients.${ci}.tasks`, base)
+    }
+
+    setNewTask('')
+  }
+
+  function toggleTodayTask(task) {
+    if (task._type === 'focus') {
+      // dashboard.todayFocus items use updateInArray
+      updateInArray(task._path, task.id, { completed: !task.completed })
+    } else {
+      toggleTask(task._path, task.id)
+    }
+  }
+
+  function deleteTodayTask(task) {
+    removeFromArray(task._path, task.id)
+  }
+
+  const done = todayTasks.filter(t => t.completed).length
 
   return (
     <div className="stack">
@@ -54,53 +170,73 @@ export default function Dashboard() {
         <h1>{getGreeting()}. <InlineEdit value={d.greeting} onSave={v => setField('dashboard.greeting', v)} /></h1>
       </div>
 
-      {/* Today's Focus */}
+      {/* Today's Tasks — unified view */}
       <div className="card">
-        <h2>Today's Focus</h2>
-        {d.todayFocus.length > 0 && (
-          <div className="stack-sm" style={{ marginBottom: 8 }}>
-            {d.todayFocus.map((item, i) => (
-              <div className="row" key={item.id} style={{ padding: '6px 0' }}>
-                <span className="mono" style={{ color: 'var(--accent)', fontSize: 14, minWidth: 20 }}>
-                  {String(i + 1).padStart(2, '0')}
+        <div className="row-between" style={{ marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>Today's Tasks</h2>
+          <span className="mono small muted">{done}/{todayTasks.length} done</span>
+        </div>
+
+        {todayTasks.length > 0 && (
+          <div className="stack-sm" style={{ marginBottom: 12 }}>
+            {todayTasks.map(task => (
+              <div key={`${task._path}-${task.id}`} className={`today-task-row${task.completed ? ' completed' : ''}`}>
+                <input
+                  type="checkbox"
+                  className="task-checkbox"
+                  checked={!!task.completed}
+                  onChange={() => toggleTodayTask(task)}
+                />
+                <span className="today-task-title">{task.title}</span>
+                {task.assignee && task.assignee !== 'Both' && (
+                  <span className="assignee-badge">{task.assignee}</span>
+                )}
+                <span className="source-badge" style={{ color: sourceColor(task._source), borderColor: sourceColor(task._source) }}>
+                  {task._source}
                 </span>
-                <InlineEdit value={item.title} onSave={v => updateInArray('dashboard.todayFocus', item.id, { title: v })} />
-                <span className="mono small dim" style={{ marginLeft: 'auto' }}>
-                  <InlineEdit value={item.source} onSave={v => updateInArray('dashboard.todayFocus', item.id, { source: v })} />
-                </span>
-                <button className="task-delete" onClick={() => removeFromArray('dashboard.todayFocus', item.id)}>×</button>
+                <button className="task-delete" onClick={() => deleteTodayTask(task)}>×</button>
               </div>
             ))}
           </div>
         )}
-        <form className="add-form" onSubmit={e => {
-          e.preventDefault()
-          const input = e.target.elements.title
-          const source = e.target.elements.source
-          if (!input.value.trim()) return
-          addToArray('dashboard.todayFocus', { id: `tf-${Date.now()}`, title: input.value.trim(), source: source.value })
-          input.value = ''
-        }}>
-          <input name="title" className="input" placeholder="Add focus item..." style={{ flex: 1 }} />
-          <select name="source" className="select">
-            <option>Outreach</option><option>Clients</option><option>AI Content SaaS</option><option>Coaching</option><option>YouTube</option><option>Other</option>
+
+        {todayTasks.length === 0 && (
+          <p className="muted small" style={{ marginBottom: 12 }}>No tasks for today yet. Add one below.</p>
+        )}
+
+        {/* Add task form */}
+        <form onSubmit={addTodayTask} className="add-form" style={{ flexWrap: 'wrap' }}>
+          <input
+            className="input"
+            placeholder="Add a task for today..."
+            value={newTask}
+            onChange={e => setNewTask(e.target.value)}
+            style={{ flex: 1, minWidth: 160 }}
+          />
+          <select className="select" value={newDest} onChange={e => setNewDest(e.target.value)} style={{ fontSize: 12 }}>
+            {destinations.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
           </select>
-          <button type="submit" className="btn btn-accent">Add</button>
+          <select className="select" value={newAssignee} onChange={e => setNewAssignee(e.target.value)} style={{ width: 90, fontSize: 12 }}>
+            <option value="Both">Both</option>
+            <option value="William">William</option>
+            <option value="Dad">Dad</option>
+          </select>
+          <button type="submit" className="btn btn-accent" disabled={!newTask.trim()}>Add</button>
         </form>
       </div>
 
       {/* Project Summaries */}
-      <div className="grid-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
         {summaries.map(s => (
           <div className="card" key={s.name}>
             <div className="row-between" style={{ marginBottom: 8 }}>
-              <h3 style={{ margin: 0 }}>{s.name}</h3>
+              <h3 style={{ margin: 0, fontSize: 13 }}>{s.name}</h3>
               <span className="mono small muted">{s.pct}%</span>
             </div>
-            <div className="progress-bar-track" style={{ marginBottom: 10 }}>
+            <div className="progress-bar-track" style={{ marginBottom: 8 }}>
               <div className="progress-bar-fill" style={{ width: `${s.pct}%` }} />
             </div>
-            <p className="small muted">{s.next}</p>
+            <p className="small muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{s.next}</p>
           </div>
         ))}
       </div>
