@@ -1,8 +1,6 @@
-import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DataProvider, useData } from './context/DataContext'
 import NavBar from './components/NavBar'
-import ChatPanel from './components/ChatPanel'
 import Dashboard from './pages/Dashboard'
 import Outreach from './pages/Outreach'
 import Clients from './pages/Clients'
@@ -13,7 +11,6 @@ import Ideas from './pages/Ideas'
 
 function AppContent() {
   const { data } = useData()
-  const [chatOpen, setChatOpen] = useState(false)
 
   if (!data) {
     return (
@@ -25,7 +22,7 @@ function AppContent() {
 
   return (
     <div className="app-layout">
-      <NavBar onBriefClaude={() => setChatOpen(true)} />
+      <NavBar />
       <div className="page-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -38,7 +35,6 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
-      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   )
 }

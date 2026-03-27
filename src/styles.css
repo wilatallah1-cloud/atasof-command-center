@@ -42,7 +42,7 @@ body {
 }
 
 /* ---- Scrollbar ---- */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
@@ -58,7 +58,7 @@ body {
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 24px 64px;
+  padding: 28px 24px 80px;
 }
 
 /* ---- Top Bar ---- */
@@ -68,20 +68,21 @@ body {
   z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 56px;
-  background: var(--bg);
+  gap: 12px;
+  padding: 0 20px;
+  height: 52px;
+  background: rgba(13, 13, 18, 0.95);
   border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .topbar-brand {
   font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
   text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
@@ -89,11 +90,11 @@ body {
 
 .topbar-nav {
   display: flex;
-  gap: 6px;
+  gap: 2px;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 0 16px;
+  flex: 1;
 }
 .topbar-nav::-webkit-scrollbar { display: none; }
 
@@ -101,7 +102,7 @@ body {
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 400;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 20px;
   border: none;
   background: transparent;
@@ -110,6 +111,7 @@ body {
   white-space: nowrap;
   transition: all 0.15s ease;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .nav-pill:hover {
   color: var(--text);
@@ -121,31 +123,12 @@ body {
   font-weight: 600;
 }
 
-.brief-btn {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--accent);
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-.brief-btn:hover {
-  background: var(--accent);
-  color: #0D0D12;
-}
-
 /* ---- Cards ---- */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 20px;
+  padding: 18px;
   transition: border-color 0.15s ease;
 }
 .card:hover {
@@ -162,32 +145,24 @@ h1 {
   margin-bottom: 4px;
 }
 h2 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   margin-bottom: 12px;
 }
 h3 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin-bottom: 8px;
 }
-.mono {
-  font-family: var(--font-mono);
-}
-.muted {
-  color: var(--text-muted);
-}
-.dim {
-  color: var(--text-dim);
-}
-.small {
-  font-size: 12px;
-}
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--text-muted); }
+.dim { color: var(--text-dim); }
+.small { font-size: 12px; }
 
 /* ---- Progress Bar ---- */
 .progress-bar-track {
   width: 100%;
-  height: 5px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
   overflow: hidden;
@@ -239,12 +214,12 @@ h3 {
 .badge-approved { color: var(--green); }
 .badge-approved::before { background: var(--green); }
 
-/* ---- Checkbox ---- */
+/* ---- Task Items ---- */
 .task-item {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 .task-item:last-child { border-bottom: none; }
@@ -252,16 +227,17 @@ h3 {
 .checkbox {
   appearance: none;
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
   border: 1.5px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
-  margin-top: 2px;
+  margin-top: 1px;
+  -webkit-tap-highlight-color: transparent;
 }
 .checkbox:checked {
   background: var(--accent);
@@ -271,7 +247,7 @@ h3 {
   content: '';
   position: absolute;
   top: 2px;
-  left: 5px;
+  left: 6px;
   width: 5px;
   height: 9px;
   border: solid #0D0D12;
@@ -282,6 +258,8 @@ h3 {
 .task-text {
   font-size: 14px;
   line-height: 1.5;
+  flex: 1;
+  word-break: break-word;
 }
 .task-text.completed {
   text-decoration: line-through;
@@ -292,7 +270,6 @@ h3 {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
-  margin-left: auto;
   white-space: nowrap;
   padding-top: 3px;
 }
@@ -306,7 +283,7 @@ h3 {
 .grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 .stack {
   display: flex;
@@ -322,11 +299,13 @@ h3 {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 .row-between {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 /* ---- Pipeline / Phase Tracker ---- */
@@ -334,10 +313,11 @@ h3 {
   display: flex;
   gap: 2px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .pipeline-step {
   flex: 1;
-  min-width: 0;
+  min-width: 80px;
   text-align: center;
   padding: 10px 8px;
   font-family: var(--font-mono);
@@ -363,18 +343,18 @@ h3 {
 /* ---- Stat Box ---- */
 .stat-box {
   text-align: center;
-  padding: 16px;
+  padding: 16px 12px;
 }
 .stat-value {
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--text);
 }
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 /* ---- Log ---- */
@@ -388,10 +368,10 @@ h3 {
 .log-entry:last-child { border-bottom: none; }
 .log-date {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   white-space: nowrap;
-  min-width: 80px;
+  min-width: 70px;
 }
 
 /* ---- Idea Card ---- */
@@ -418,7 +398,7 @@ h3 {
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
-  padding: 8px 18px;
+  padding: 9px 18px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -427,14 +407,14 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn-accent {
   background: var(--accent);
   color: #0D0D12;
 }
-.btn-accent:hover {
-  opacity: 0.85;
-}
+.btn-accent:hover { opacity: 0.85; }
 .btn-outline {
   background: transparent;
   border: 1px solid var(--border);
@@ -450,9 +430,8 @@ h3 {
   padding: 4px 8px;
   font-size: 12px;
 }
-.btn-ghost:hover {
-  background: rgba(0, 212, 255, 0.08);
-}
+.btn-ghost:hover { background: rgba(0, 212, 255, 0.08); }
+.btn-ghost.small { font-size: 11px; padding: 2px 6px; }
 
 /* ---- Input ---- */
 .input {
@@ -461,18 +440,17 @@ h3 {
   padding: 10px 14px;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--elevated);
   color: var(--text);
   width: 100%;
   transition: border-color 0.15s ease;
+  -webkit-appearance: none;
 }
 .input:focus {
   outline: none;
   border-color: var(--accent);
 }
-.input::placeholder {
-  color: var(--text-dim);
-}
+.input::placeholder { color: var(--text-dim); }
 textarea.input {
   resize: vertical;
   min-height: 80px;
@@ -482,23 +460,22 @@ textarea.input {
 .select {
   font-family: var(--font-mono);
   font-size: 12px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--elevated);
   color: var(--text-muted);
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 /* ---- Section Spacing ---- */
-.section-header {
-  margin-bottom: 20px;
-}
+.section-header { margin-bottom: 20px; }
 .section-desc {
   font-size: 14px;
   color: var(--text-muted);
   margin-top: 4px;
-  max-width: 600px;
 }
 
 /* ---- Client Card Expand ---- */
@@ -512,54 +489,56 @@ textarea.input {
   padding: 4px 0;
   transition: color 0.15s ease;
 }
-.client-expand-btn:hover {
-  color: var(--text);
-}
+.client-expand-btn:hover { color: var(--text); }
 
 /* ---- Counter Pipeline (Outreach) ---- */
 .counter-pipeline {
   display: flex;
   gap: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .counter-step {
   flex: 1;
+  min-width: 64px;
   text-align: center;
-  padding: 14px 8px;
+  padding: 14px 6px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
 }
 .counter-step-value {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
 }
 .counter-step-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .counter-step-arrow {
   display: flex;
   align-items: center;
   color: var(--text-dim);
-  font-size: 16px;
-  padding: 0 2px;
+  font-size: 14px;
+  padding: 0 1px;
+  flex-shrink: 0;
 }
 
 /* ---- Video Board ---- */
 .board-column {
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
-  padding: 12px;
-  min-height: 120px;
+  padding: 10px;
+  min-height: 100px;
 }
 .board-column-title {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   letter-spacing: 0.05em;
 }
 .board-item {
@@ -576,6 +555,10 @@ textarea.input {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+}
+.add-form .input {
+  min-width: 0;
 }
 
 /* ---- Inline Edit ---- */
@@ -584,12 +567,8 @@ textarea.input {
   border-bottom: 1px dashed transparent;
   transition: border-color 0.15s ease;
 }
-.inline-editable:hover {
-  border-bottom-color: rgba(255, 255, 255, 0.15);
-}
-.inline-edit-input {
-  width: auto;
-}
+.inline-editable:hover { border-bottom-color: rgba(255, 255, 255, 0.15); }
+.inline-edit-input { width: auto; }
 
 /* ---- Delete Button ---- */
 .task-delete {
@@ -597,80 +576,14 @@ textarea.input {
   border: none;
   color: var(--text-dim);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   padding: 0 4px;
   line-height: 1;
   transition: color 0.15s ease;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
-.task-delete:hover {
-  color: var(--red);
-}
-
-/* ---- Chat Panel ---- */
-.chat-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 200;
-  display: flex;
-  justify-content: flex-end;
-}
-.chat-panel {
-  width: 440px;
-  max-width: 100vw;
-  height: 100vh;
-  background: var(--bg);
-  border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-}
-.chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.chat-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 4px;
-}
-.chat-close:hover { color: var(--text); }
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-.chat-msg {
-  margin-bottom: 16px;
-}
-.chat-msg-label {
-  margin-bottom: 4px;
-  color: var(--text-muted);
-}
-.chat-msg.user .chat-msg-label { color: var(--accent); }
-.chat-msg-text {
-  font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-.chat-input-area {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  align-items: flex-end;
-}
-.chat-input-area .input {
-  flex: 1;
-}
+.task-delete:hover { color: var(--red); }
 
 /* ---- Notion Links ---- */
 .notion-section {
@@ -685,16 +598,9 @@ textarea.input {
   border-radius: 6px;
   transition: background 0.15s ease;
 }
-.notion-link-row:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-.notion-link-row:hover .task-delete {
-  opacity: 1;
-}
-.notion-link-row .task-delete {
-  opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
+.notion-link-row:hover { background: rgba(255, 255, 255, 0.02); }
+.notion-link-row:hover .task-delete { opacity: 1; }
+.notion-link-row .task-delete { opacity: 0; transition: opacity 0.15s ease, color 0.15s ease; }
 .notion-link {
   font-size: 13px;
   color: var(--text);
@@ -704,9 +610,7 @@ textarea.input {
   flex-direction: column;
   gap: 2px;
 }
-.notion-link:hover {
-  color: var(--accent);
-}
+.notion-link:hover { color: var(--accent); }
 .notion-link-url {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -714,11 +618,9 @@ textarea.input {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 400px;
+  max-width: 300px;
 }
-.notion-link-title {
-  font-weight: 500;
-}
+.notion-link-title { font-weight: 500; }
 
 /* ---- Goal Card Editable ---- */
 .goal-card {
@@ -727,19 +629,15 @@ textarea.input {
   position: relative;
 }
 .goal-card:last-child { border-bottom: none; }
-.goal-card:hover .task-delete {
-  opacity: 1;
-}
-.goal-card .task-delete {
-  opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
+.goal-card:hover .task-delete { opacity: 1; }
+.goal-card .task-delete { opacity: 0; transition: opacity 0.15s ease, color 0.15s ease; }
 .goal-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 .goal-title {
   font-size: 13px;
@@ -766,6 +664,7 @@ textarea.input {
   font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 .goal-num {
   padding: 2px 6px;
@@ -827,23 +726,11 @@ textarea.input {
   color: var(--text-dim);
 }
 
-/* ---- Hover-Reveal Delete (task items) ---- */
-.task-item:hover .task-delete {
-  opacity: 1;
-}
-.task-item .task-delete {
-  opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
-
-/* ---- Log entry hover-reveal delete ---- */
-.log-entry:hover .task-delete {
-  opacity: 1;
-}
-.log-entry .task-delete {
-  opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
+/* ---- Hover-reveal deletes (desktop) ---- */
+.task-item:hover .task-delete { opacity: 1; }
+.task-item .task-delete { opacity: 0; transition: opacity 0.15s ease, color 0.15s ease; }
+.log-entry:hover .task-delete { opacity: 1; }
+.log-entry .task-delete { opacity: 0; transition: opacity 0.15s ease, color 0.15s ease; }
 
 /* ---- Selection color ---- */
 ::selection {
@@ -857,13 +744,136 @@ textarea.input {
   cursor: not-allowed;
 }
 
-/* ---- Responsive ---- */
+/* ============================
+   MOBILE — full optimization
+   ============================ */
 @media (max-width: 768px) {
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  .pipeline { flex-wrap: wrap; }
-  .counter-pipeline { flex-wrap: wrap; }
-  .counter-step { min-width: calc(50% - 2px); }
-  .topbar { padding: 0 12px; }
-  .page-content { padding: 20px 16px 48px; }
-  .topbar-brand { font-size: 11px; }
+  /* Layout */
+  .page-content {
+    padding: 16px 14px 80px;
+  }
+
+  /* Topbar — stack brand above nav on very small screens */
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 14px 0;
+    gap: 6px;
+  }
+  .topbar-brand {
+    font-size: 11px;
+    flex: 0 0 auto;
+    padding-bottom: 2px;
+  }
+  .topbar-nav {
+    width: 100%;
+    padding-bottom: 8px;
+    gap: 2px;
+  }
+  .nav-pill {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  /* Typography */
+  h1 { font-size: 20px; }
+
+  /* Grids → single column */
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Cards */
+  .card { padding: 14px; }
+
+  /* Add forms — stack on mobile */
+  .add-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .add-form .input,
+  .add-form .select,
+  .add-form .btn,
+  .add-form button {
+    width: 100%;
+  }
+  /* Exception: small inline forms (status, goal numbers) stay row */
+  .add-form.row-form {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Counter pipeline — 2-up grid */
+  .counter-pipeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .counter-step-arrow { display: none; }
+  .counter-step {
+    padding: 12px 8px;
+  }
+  .counter-step-value { font-size: 20px; }
+
+  /* Pipeline phase tracker */
+  .pipeline { gap: 4px; }
+  .pipeline-step {
+    min-width: 70px;
+    padding: 8px 6px;
+    font-size: 10px;
+  }
+
+  /* Board (YouTube pipeline) — horizontal scroll */
+  .board-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+
+  /* Stat boxes — 3-up stays but smaller */
+  .stat-box { padding: 12px 8px; }
+  .stat-value { font-size: 22px; }
+
+  /* Idea cards — stack buttons below text */
+  .idea-card {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .idea-card > div:last-child {
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  /* Notion links URL — truncate shorter */
+  .notion-link-url { max-width: 200px; }
+
+  /* Goal card — wrap numbers below title on small screens */
+  .goal-card-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+
+  /* Log entries — stack date above text */
+  .log-entry { flex-direction: column; gap: 4px; }
+  .log-date { min-width: auto; }
+
+  /* Make delete buttons always visible on touch */
+  .task-item .task-delete,
+  .log-entry .task-delete,
+  .goal-card .task-delete,
+  .notion-link-row .task-delete {
+    opacity: 0.5;
+  }
+
+  /* Row-between on mobile — allow wrap */
+  .row-between { flex-wrap: wrap; }
+
+  /* Section header */
+  .section-header { margin-bottom: 16px; }
+}
+
+@media (max-width: 400px) {
+  /* Extra small — very tight */
+  .nav-pill { font-size: 11px; padding: 4px 8px; }
+  .counter-pipeline { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
 }

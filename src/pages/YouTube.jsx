@@ -81,7 +81,8 @@ export default function YouTube() {
 
       <div className="card">
         <h2>Video Pipeline</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)`, gap: 8, marginTop: 8 }}>
+        <div className="board-wrap">
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, minmax(130px, 1fr))`, gap: 8, marginTop: 8 }}>
           {columns.map(col => (
             <div className="board-column" key={col.key}>
               <div className="board-column-title">
@@ -103,6 +104,7 @@ export default function YouTube() {
               )}
             </div>
           ))}
+        </div>
         </div>
         <form onSubmit={addVideoIdea} className="add-form" style={{ marginTop: 12 }}>
           <input className="input" placeholder="Add video idea..." value={newVideo} onChange={e => setNewVideo(e.target.value)} style={{ flex: 1 }} />

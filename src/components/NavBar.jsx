@@ -4,16 +4,16 @@ const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/outreach', label: 'Outreach' },
   { to: '/clients', label: 'Clients' },
-  { to: '/ai-saas', label: 'AI Content SaaS' },
+  { to: '/ai-saas', label: 'AI SaaS' },
   { to: '/coaching', label: 'Coaching' },
   { to: '/youtube', label: 'YouTube' },
   { to: '/ideas', label: 'Ideas' },
 ]
 
-export default function NavBar({ onBriefClaude }) {
+export default function NavBar() {
   return (
     <header className="topbar">
-      <div className="topbar-brand">ATASOF AI COMMAND CENTER</div>
+      <div className="topbar-brand">ATASOF AI</div>
       <nav className="topbar-nav">
         {links.map(l => (
           <NavLink
@@ -26,9 +26,6 @@ export default function NavBar({ onBriefClaude }) {
           </NavLink>
         ))}
       </nav>
-      <button className="brief-btn" onClick={onBriefClaude}>
-        Brief Claude
-      </button>
     </header>
   )
 }
