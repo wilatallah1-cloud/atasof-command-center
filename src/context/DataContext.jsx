@@ -162,7 +162,10 @@ async function loadFromSupabase() {
       .eq('id', ROW_ID)
       .single()
     if (error || !data) return null
-    return data.data
+    // Treat empty object as uninitialized — fall through to data.json
+    const d = data.data
+    if (!d || !d.outreach) return null
+    return d
   } catch {
     return null
   }
