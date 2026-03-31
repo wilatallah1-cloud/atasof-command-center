@@ -31,12 +31,22 @@ function formatCAD(amount) {
   return `$${Math.round(amount).toLocaleString('en-CA')} CAD`
 }
 
-function monthsSince(dateStr) {
-  if (!dateStr) return 1
-  const start = new Date(dateStr)
-  const now = new Date()
-  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+function monthsBetween(startStr, endStr) {
+  if (!startStr) return 1
+  const start = new Date(startStr)
+  const end = endStr ? new Date(endStr) : new Date()
+  const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
   return Math.max(1, months)
+}
+
+function getClientCashCollected(client) {
+  if (client.status === 'WAITING ON CLIENT') return 0
+  const monthly = parseCAD(client.monthly)
+  const setupFee = parseCAD(client.setupFee)
+  if (client.status === 'NO LONGER ACTIVE') {
+    return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
+  }
+  return setupFee + monthly * monthsBetween(client.startDate)
 }
 
 // Aggregate tasks from all pages that are due today
@@ -186,12 +196,7 @@ export default function Dashboard() {
   const mrr = activeClients.reduce((sum, c) => sum + parseCAD(c.monthly), 0)
   const mrrGoal = data.mrrGoal || 5000
   const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
-  const totalCashCollected = data.clients.reduce((sum, c) => {
-    const setup = parseCAD(c.setupFee)
-    const monthly = parseCAD(c.monthly)
-    const months = monthsSince(c.startDate)
-    return sum + setup + monthly * months
-  }, 0)
+  const totalCashCollected = data.clients.reduce((sum, c) => sum + getClientCashCollected(c), 0)
 
   return (
     <div className="stack">

@@ -16,12 +16,22 @@ function formatCAD(amount) {
   return `$${Math.round(amount).toLocaleString('en-CA')} CAD`
 }
 
-function monthsSince(dateStr) {
-  if (!dateStr) return 1
-  const start = new Date(dateStr)
-  const now = new Date()
-  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+function monthsBetween(startStr, endStr) {
+  if (!startStr) return 1
+  const start = new Date(startStr)
+  const end = endStr ? new Date(endStr) : new Date()
+  const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
   return Math.max(1, months)
+}
+
+function getClientCashCollected(client) {
+  if (client.status === 'WAITING ON CLIENT') return 0
+  const monthly = parseCAD(client.monthly)
+  const setupFee = parseCAD(client.setupFee)
+  if (client.status === 'NO LONGER ACTIVE') {
+    return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
+  }
+  return setupFee + monthly * monthsBetween(client.startDate)
 }
 
 function ClientCard({ client, clientIdx }) {
@@ -31,12 +41,19 @@ function ClientCard({ client, clientIdx }) {
   const doneTasks = client.tasks.filter(t => t.completed).length
   const totalTasks = client.tasks.length
 
-  const statusOptions = ['ACTIVE', 'NEEDS ATTENTION', 'WAITING ON CLIENT']
+  const statusOptions = ['ACTIVE', 'NEEDS ATTENTION', 'WAITING ON CLIENT', 'NO LONGER ACTIVE']
 
-  const monthly = parseCAD(client.monthly)
-  const setupFee = parseCAD(client.setupFee)
-  const months = monthsSince(client.startDate)
-  const ltv = setupFee + monthly * months
+  const ltv = getClientCashCollected(client)
+
+  function handleStatusChange(newStatus) {
+    setField(`${path}.status`, newStatus)
+    if (newStatus === 'NO LONGER ACTIVE' && !client.endDate) {
+      setField(`${path}.endDate`, new Date().toISOString().split('T')[0])
+    }
+    if (newStatus === 'ACTIVE' && client.endDate) {
+      setField(`${path}.endDate`, null)
+    }
+  }
 
   function deleteClient() {
     if (confirm(`Delete ${client.name}?`)) {
@@ -52,7 +69,7 @@ function ClientCard({ client, clientIdx }) {
             <h2 style={{ margin: 0 }}>
               <InlineEdit value={client.name} onSave={v => setField(`${path}.name`, v)} />
             </h2>
-            <select className="select" value={client.status} onChange={e => setField(`${path}.status`, e.target.value)}>
+            <select className="select" value={client.status} onChange={e => handleStatusChange(e.target.value)}>
               {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -89,9 +106,24 @@ function ClientCard({ client, clientIdx }) {
             }
           </div>
         </div>
+        {client.status === 'NO LONGER ACTIVE' && (
+          <div>
+            <div className="small muted" style={{ marginBottom: 2 }}>End Date</div>
+            <div className="mono small">
+              {client.endDate
+                ? <InlineEdit value={client.endDate} onSave={v => setField(`${path}.endDate`, v)} />
+                : <span
+                    className="dim"
+                    style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
+                    onClick={() => setField(`${path}.endDate`, new Date().toISOString().split('T')[0])}
+                  >+ set date</span>
+              }
+            </div>
+          </div>
+        )}
         <div>
-          <div className="small muted" style={{ marginBottom: 2 }}>Lifetime Value</div>
-          <div className="mono small" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+          <div className="small muted" style={{ marginBottom: 2 }}>Cash Collected</div>
+          <div className="mono small" style={{ color: client.status === 'WAITING ON CLIENT' ? 'var(--text-muted)' : 'var(--accent)', fontWeight: 600 }}>
             {formatCAD(ltv)}
           </div>
         </div>
