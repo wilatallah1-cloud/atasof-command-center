@@ -27,6 +27,7 @@
   },
   "clients": [],
   "clientsNotionLinks": [],
+  "mrrGoal": 5000,
   "aiSaas": {
     "description": "HeyGen + ElevenLabs AI clone content system. Test on ourselves first, then offer as a service.",
     "currentPhase": 0,

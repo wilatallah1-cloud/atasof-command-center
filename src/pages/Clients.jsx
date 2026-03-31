@@ -6,6 +6,24 @@ import { AddTaskForm, AddNoteForm } from '../components/AddItemForm'
 import InlineEdit from '../components/InlineEdit'
 import NotionLinks from '../components/NotionLinks'
 
+function parseCAD(str) {
+  if (!str) return 0
+  const num = parseFloat(String(str).replace(/[^0-9.]/g, ''))
+  return isNaN(num) ? 0 : num
+}
+
+function formatCAD(amount) {
+  return `$${Math.round(amount).toLocaleString('en-CA')} CAD`
+}
+
+function monthsSince(dateStr) {
+  if (!dateStr) return 1
+  const start = new Date(dateStr)
+  const now = new Date()
+  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+  return Math.max(1, months)
+}
+
 function ClientCard({ client, clientIdx }) {
   const { data, setField, toggleTask, removeFromArray, updateInArray, addToArray } = useData()
   const [expanded, setExpanded] = useState(false)
@@ -14,6 +32,11 @@ function ClientCard({ client, clientIdx }) {
   const totalTasks = client.tasks.length
 
   const statusOptions = ['ACTIVE', 'NEEDS ATTENTION', 'WAITING ON CLIENT']
+
+  const monthly = parseCAD(client.monthly)
+  const setupFee = parseCAD(client.setupFee)
+  const months = monthsSince(client.startDate)
+  const ltv = setupFee + monthly * months
 
   function deleteClient() {
     if (confirm(`Delete ${client.name}?`)) {
@@ -37,9 +60,40 @@ function ClientCard({ client, clientIdx }) {
             <InlineEdit value={client.service} onSave={v => setField(`${path}.service`, v)} />
           </p>
         </div>
-        <div className="row" style={{ gap: 8 }}>
-          <InlineEdit value={client.monthly} onSave={v => setField(`${path}.monthly`, v)} className="mono small muted" />
-          <button className="task-delete" onClick={deleteClient} title="Delete client">×</button>
+        <button className="task-delete" onClick={deleteClient} title="Delete client">×</button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 24, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div className="small muted" style={{ marginBottom: 2 }}>Monthly</div>
+          <div className="mono small">
+            <InlineEdit value={client.monthly || '$0 CAD'} onSave={v => setField(`${path}.monthly`, v)} />
+          </div>
+        </div>
+        <div>
+          <div className="small muted" style={{ marginBottom: 2 }}>Setup Fee</div>
+          <div className="mono small">
+            <InlineEdit value={client.setupFee || '$0 CAD'} onSave={v => setField(`${path}.setupFee`, v)} />
+          </div>
+        </div>
+        <div>
+          <div className="small muted" style={{ marginBottom: 2 }}>Start Date</div>
+          <div className="mono small">
+            {client.startDate
+              ? <InlineEdit value={client.startDate} onSave={v => setField(`${path}.startDate`, v)} />
+              : <span
+                  className="dim"
+                  style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
+                  onClick={() => setField(`${path}.startDate`, new Date().toISOString().split('T')[0])}
+                >+ set date</span>
+            }
+          </div>
+        </div>
+        <div>
+          <div className="small muted" style={{ marginBottom: 2 }}>Lifetime Value</div>
+          <div className="mono small" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+            {formatCAD(ltv)}
+          </div>
         </div>
       </div>
 
@@ -100,6 +154,11 @@ export default function Clients() {
   const [newName, setNewName] = useState('')
   const [newService, setNewService] = useState('')
 
+  const activeClients = data.clients.filter(c => c.status === 'ACTIVE')
+  const mrr = activeClients.reduce((sum, c) => sum + parseCAD(c.monthly), 0)
+  const mrrGoal = data.mrrGoal || 5000
+  const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
+
   function addClient(e) {
     e.preventDefault()
     if (!newName.trim()) return
@@ -109,6 +168,8 @@ export default function Clients() {
       service: newService.trim() || 'TBD',
       status: 'ACTIVE',
       monthly: '$0 CAD',
+      setupFee: '$0 CAD',
+      startDate: new Date().toISOString().split('T')[0],
       tasks: [],
       nextAction: 'Define scope',
       nextActionDue: null,
@@ -127,6 +188,49 @@ export default function Clients() {
           <p className="section-desc">Active client projects and deliverables.</p>
         </div>
         <button className="btn btn-accent" onClick={() => setShowAdd(!showAdd)}>+ Add Client</button>
+      </div>
+
+      <div className="card">
+        <div className="row-between" style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0 }}>Monthly Recurring Revenue</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="small muted">Goal:</span>
+            <span className="mono small">
+              <InlineEdit
+                value={formatCAD(mrrGoal)}
+                onSave={v => setField('mrrGoal', parseCAD(v))}
+              />
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 32, marginBottom: 14, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Current MRR</div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
+              {formatCAD(mrr)}
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Active clients</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
+              {activeClients.length}
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>To goal</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1, color: mrr >= mrrGoal ? 'var(--accent)' : undefined }}>
+              {mrr >= mrrGoal ? '✓ Hit' : formatCAD(mrrGoal - mrr)}
+            </div>
+          </div>
+        </div>
+        <div className="progress-bar-track" style={{ height: 8 }}>
+          <div className="progress-bar-fill" style={{ width: `${mrrProgress}%`, transition: 'width 0.3s ease' }} />
+        </div>
+        <div className="row-between" style={{ marginTop: 4 }}>
+          <span className="small dim">$0</span>
+          <span className="small dim">{Math.round(mrrProgress)}% of goal</span>
+          <span className="small dim">{formatCAD(mrrGoal)}</span>
+        </div>
       </div>
 
       {showAdd && (
