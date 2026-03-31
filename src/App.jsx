@@ -5,9 +5,9 @@ import NavBar from './components/NavBar'
 import Dashboard from './pages/Dashboard'
 import Outreach from './pages/Outreach'
 import Clients from './pages/Clients'
-import AISaas from './pages/AISaas'
+import AIApp from './pages/AIApp'
 import Coaching from './pages/Coaching'
-import YouTube from './pages/YouTube'
+import ContentCreation from './pages/ContentCreation'
 import Ideas from './pages/Ideas'
 
 function AppContent() {
@@ -29,9 +29,9 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/outreach" element={<Outreach />} />
           <Route path="/clients" element={<Clients />} />
-          <Route path="/ai-saas" element={<AISaas />} />
+          <Route path="/ai-app" element={<AIApp />} />
           <Route path="/coaching" element={<Coaching />} />
-          <Route path="/youtube" element={<YouTube />} />
+          <Route path="/content" element={<ContentCreation />} />
           <Route path="/ideas" element={<Ideas />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

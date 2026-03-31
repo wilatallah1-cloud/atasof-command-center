@@ -6,9 +6,9 @@ const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/outreach', label: 'Outreach' },
   { to: '/clients', label: 'Clients' },
-  { to: '/ai-saas', label: 'AI SaaS' },
+  { to: '/ai-app', label: 'AI App' },
   { to: '/coaching', label: 'Coaching' },
-  { to: '/youtube', label: 'YouTube' },
+  { to: '/content', label: 'Content Creation' },
   { to: '/ideas', label: 'Ideas' },
 ]
 

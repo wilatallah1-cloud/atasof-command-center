@@ -21,6 +21,24 @@ function formatDate() {
 
 const TODAY = new Date().toISOString().split('T')[0]
 
+function parseCAD(str) {
+  if (!str) return 0
+  const num = parseFloat(String(str).replace(/[^0-9.]/g, ''))
+  return isNaN(num) ? 0 : num
+}
+
+function formatCAD(amount) {
+  return `$${Math.round(amount).toLocaleString('en-CA')} CAD`
+}
+
+function monthsSince(dateStr) {
+  if (!dateStr) return 1
+  const start = new Date(dateStr)
+  const now = new Date()
+  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+  return Math.max(1, months)
+}
+
 // Aggregate tasks from all pages that are due today
 function getTodayTasks(data) {
   const all = []
@@ -35,10 +53,10 @@ function getTodayTasks(data) {
     all.push({ ...t, _source: 'Outreach', _path: 'outreach.todayChecklist', _type: 'task' })
   })
 
-  // AI SaaS tasks due today
+  // AI App tasks due today
   ;(data.aiSaas.phases || []).forEach((phase, i) => {
     ;(phase.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
-      all.push({ ...t, _source: `AI SaaS · ${phase.name}`, _path: `aiSaas.phases.${i}.tasks`, _type: 'task' })
+      all.push({ ...t, _source: `AI App · ${phase.name}`, _path: `aiSaas.phases.${i}.tasks`, _type: 'task' })
     })
   })
 
@@ -69,14 +87,14 @@ function getProjectSummary(data) {
 
   const allSaasTasks = data.aiSaas.phases.flatMap(p => p.tasks)
   const saasDone = allSaasTasks.filter(t => t.completed).length
-  summaries.push({ name: 'AI SaaS', pct: allSaasTasks.length > 0 ? Math.round((saasDone / allSaasTasks.length) * 100) : 0, next: allSaasTasks.find(t => !t.completed)?.title || 'No tasks yet' })
+  summaries.push({ name: 'AI App', pct: allSaasTasks.length > 0 ? Math.round((saasDone / allSaasTasks.length) * 100) : 0, next: allSaasTasks.find(t => !t.completed)?.title || 'No tasks yet' })
 
   const coachDone = data.coaching.tasks.filter(t => t.completed).length
   summaries.push({ name: 'Coaching', pct: data.coaching.tasks.length > 0 ? Math.round((coachDone / data.coaching.tasks.length) * 100) : 0, next: data.coaching.tasks.find(t => !t.completed)?.title || 'No tasks yet' })
 
   const ytPub = data.youtube.pipeline.published.length
   const ytTotal = Object.values(data.youtube.pipeline).flat().length
-  summaries.push({ name: 'YouTube', pct: ytTotal > 0 ? Math.round((ytPub / ytTotal) * 100) : 0, next: ytTotal > 0 ? `${ytPub} published` : 'No videos yet' })
+  summaries.push({ name: 'Content', pct: ytTotal > 0 ? Math.round((ytPub / ytTotal) * 100) : 0, next: ytTotal > 0 ? `${ytPub} published` : 'No content yet' })
 
   return summaries
 }
@@ -85,7 +103,7 @@ const SOURCE_COLORS = {
   'Dashboard': 'var(--text-muted)',
   'Outreach': 'var(--accent)',
   'Coaching': 'var(--green)',
-  'AI SaaS': 'var(--yellow)',
+  'AI App': 'var(--yellow)',
 }
 
 function sourceColor(src) {
@@ -98,7 +116,7 @@ function sourceColor(src) {
 const DESTINATIONS = [
   { label: 'Dashboard', value: 'dashboard' },
   { label: 'Outreach Checklist', value: 'outreach' },
-  { label: 'AI SaaS (current phase)', value: 'aisaas' },
+  { label: 'AI App (current phase)', value: 'aisaas' },
   { label: 'Coaching', value: 'coaching' },
 ]
 
@@ -163,11 +181,61 @@ export default function Dashboard() {
 
   const done = todayTasks.filter(t => t.completed).length
 
+  // Revenue calculations
+  const activeClients = data.clients.filter(c => c.status === 'ACTIVE')
+  const mrr = activeClients.reduce((sum, c) => sum + parseCAD(c.monthly), 0)
+  const mrrGoal = data.mrrGoal || 5000
+  const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
+  const totalCashCollected = data.clients.reduce((sum, c) => {
+    const setup = parseCAD(c.setupFee)
+    const monthly = parseCAD(c.monthly)
+    const months = monthsSince(c.startDate)
+    return sum + setup + monthly * months
+  }, 0)
+
   return (
     <div className="stack">
       <div className="section-header">
         <p className="muted small mono">{formatDate()}</p>
         <h1>{getGreeting()}. <InlineEdit value={d.greeting} onSave={v => setField('dashboard.greeting', v)} /></h1>
+      </div>
+
+      {/* Revenue Widget */}
+      <div className="card">
+        <h3 style={{ margin: '0 0 12px 0' }}>Revenue</h3>
+        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 14 }}>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>MRR</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
+              {formatCAD(mrr)}
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Monthly Goal</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
+              <InlineEdit value={formatCAD(mrrGoal)} onSave={v => setField('mrrGoal', parseCAD(v))} />
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Total Cash Collected</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1, color: 'var(--green, #4ade80)' }}>
+              {formatCAD(totalCashCollected)}
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Active Clients</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
+              {activeClients.length}
+            </div>
+          </div>
+        </div>
+        <div className="progress-bar-track" style={{ height: 6 }}>
+          <div className="progress-bar-fill" style={{ width: `${mrrProgress}%`, transition: 'width 0.3s ease' }} />
+        </div>
+        <div className="row-between" style={{ marginTop: 4 }}>
+          <span className="small dim">{Math.round(mrrProgress)}% to goal</span>
+          <span className="small dim">{mrr >= mrrGoal ? 'Goal reached' : `${formatCAD(mrrGoal - mrr)} to go`}</span>
+        </div>
       </div>
 
       {/* Today's Tasks — unified view */}
