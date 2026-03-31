@@ -29,7 +29,7 @@
   "clientsNotionLinks": [],
   "mrrGoal": 5000,
   "aiSaas": {
-    "description": "HeyGen + ElevenLabs AI clone content system. Test on ourselves first, then offer as a service.",
+    "description": "All-in-one AI platform for businesses — Jarvis personal assistant, AI employees (sub-agents), and automated content creation. One app to manage everything.",
     "currentPhase": 0,
     "phases": [
       { "name": "Setup", "tasks": [] },
