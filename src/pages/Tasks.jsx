@@ -168,13 +168,14 @@ export default function Tasks() {
       )}
 
       {/* Add task bar */}
-      <AddTaskBar onAdd={handleAddTask} defaultDate={selectedDate} />
+      <AddTaskBar onAdd={handleAddTask} defaultDate={selectedDate} clients={data.clients || []} />
 
       {/* Edit modal */}
       <TaskModal
         task={editingTask}
         onSave={handleEditSave}
         onClose={() => setEditingTask(null)}
+        clients={data.clients || []}
       />
     </div>
   )

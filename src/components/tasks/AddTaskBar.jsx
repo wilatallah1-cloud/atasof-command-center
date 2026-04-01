@@ -9,9 +9,10 @@ const SECTIONS = [
   { value: 'content', label: 'Content' },
 ]
 
-export default function AddTaskBar({ onAdd, defaultSection, defaultDate }) {
+export default function AddTaskBar({ onAdd, defaultSection, defaultDate, clients }) {
   const [title, setTitle] = useState('')
   const [section, setSection] = useState(defaultSection || 'dashboard')
+  const [clientId, setClientId] = useState('')
   const [assignee, setAssignee] = useState('William')
   const [priority, setPriority] = useState('normal')
   const [dueDate, setDueDate] = useState(defaultDate || new Date().toISOString().split('T')[0])
@@ -19,13 +20,14 @@ export default function AddTaskBar({ onAdd, defaultSection, defaultDate }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (!title.trim()) return
+    if (section === 'clients' && !clientId && clients?.length > 0) return
     onAdd({
       id: `task-${Date.now()}`,
       title: title.trim(),
       status: 'todo',
       assignee,
       section,
-      sectionRefId: null,
+      sectionRefId: section === 'clients' ? clientId : null,
       dueDate,
       scheduledTime: null,
       duration: 60,
@@ -45,9 +47,15 @@ export default function AddTaskBar({ onAdd, defaultSection, defaultDate }) {
         onChange={e => setTitle(e.target.value)}
         style={{ flex: 1 }}
       />
-      <select className="select" value={section} onChange={e => setSection(e.target.value)}>
+      <select className="select" value={section} onChange={e => { setSection(e.target.value); setClientId('') }}>
         {SECTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
       </select>
+      {section === 'clients' && clients?.length > 0 && (
+        <select className="select" value={clientId} onChange={e => setClientId(e.target.value)}>
+          <option value="">Select client...</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      )}
       <select className="select" value={assignee} onChange={e => setAssignee(e.target.value)}>
         <option value="William">William</option>
         <option value="Fadi">Fadi</option>

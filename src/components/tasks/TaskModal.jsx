@@ -9,10 +9,11 @@ const SECTIONS = [
   { value: 'content', label: 'Content' },
 ]
 
-export default function TaskModal({ task, onSave, onClose }) {
+export default function TaskModal({ task, onSave, onClose, clients }) {
   const [form, setForm] = useState({
     title: '',
     section: 'dashboard',
+    sectionRefId: '',
     assignee: 'William',
     priority: 'normal',
     dueDate: '',
@@ -26,6 +27,7 @@ export default function TaskModal({ task, onSave, onClose }) {
       setForm({
         title: task.title || '',
         section: task.section || 'dashboard',
+        sectionRefId: task.sectionRefId || '',
         assignee: task.assignee || 'William',
         priority: task.priority || 'normal',
         dueDate: task.dueDate || '',
@@ -42,6 +44,7 @@ export default function TaskModal({ task, onSave, onClose }) {
     e.preventDefault()
     onSave(task.id, {
       ...form,
+      sectionRefId: form.section === 'clients' ? (form.sectionRefId || null) : null,
       scheduledTime: form.scheduledTime || null,
       completedAt: form.status === 'done' && task.status !== 'done'
         ? new Date().toISOString()
@@ -64,7 +67,7 @@ export default function TaskModal({ task, onSave, onClose }) {
           <div className="row" style={{ gap: 12 }}>
             <label className="form-label" style={{ flex: 1 }}>
               Section
-              <select className="select" value={form.section} onChange={set('section')}>
+              <select className="select" value={form.section} onChange={e => setForm(f => ({ ...f, section: e.target.value, sectionRefId: '' }))}>
                 {SECTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </label>
@@ -77,6 +80,15 @@ export default function TaskModal({ task, onSave, onClose }) {
               </select>
             </label>
           </div>
+          {form.section === 'clients' && clients?.length > 0 && (
+            <label className="form-label">
+              Client
+              <select className="select" value={form.sectionRefId} onChange={set('sectionRefId')}>
+                <option value="">Select client...</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
+          )}
           <div className="row" style={{ gap: 12 }}>
             <label className="form-label" style={{ flex: 1 }}>
               Priority
