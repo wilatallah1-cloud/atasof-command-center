@@ -42,6 +42,7 @@ export default function Tasks() {
 
   // Daily schedule reset
   useEffect(() => {
+    if (!data.tasksSettings) return
     const today = new Date().toISOString().split('T')[0]
     if (settings.lastScheduleReset !== today) {
       const stale = tasks.filter(t => t.scheduledTime && t.status !== 'done' && t.dueDate && t.dueDate < today)

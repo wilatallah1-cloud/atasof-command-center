@@ -193,10 +193,24 @@ function migrateData(d) {
     }
   }
 
-  // Rename any remaining "Dad" assignees to "Fadi"
-  if (d.tasks) {
-    d.tasks.forEach(t => { if (t.assignee === 'Dad') t.assignee = 'Fadi' })
+  // Ensure tasksSettings always exists
+  if (!d.tasksSettings) {
+    d.tasksSettings = {
+      workStart: '10:00',
+      workEnd: '18:00',
+      peakStart: '11:00',
+      peakEnd: '13:30',
+      lastScheduleReset: new Date().toISOString().split('T')[0],
+    }
   }
+
+  // Ensure tasks array always exists
+  if (!d.tasks) {
+    d.tasks = []
+  }
+
+  // Rename any remaining "Dad" assignees to "Fadi"
+  d.tasks.forEach(t => { if (t.assignee === 'Dad') t.assignee = 'Fadi' })
 
   return d
 }
