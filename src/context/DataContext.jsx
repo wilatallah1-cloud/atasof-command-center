@@ -152,7 +152,13 @@ function migrateData(d) {
   }
 
   // Migrate scattered tasks into centralized data.tasks array
-  if (!d.tasks) {
+  // Run if tasks doesn't exist OR if it's empty but old locations still have tasks
+  const hasOldTasks = (d.dashboard?.todayFocus?.length > 0) ||
+    (d.outreach?.todayChecklist?.length > 0) ||
+    (d.coaching?.tasks?.length > 0) ||
+    (d.aiSaas?.phases || []).some(p => p.tasks?.length > 0) ||
+    (d.clients || []).some(c => c.tasks?.length > 0)
+  if (!d.tasks || (d.tasks.length === 0 && hasOldTasks)) {
     const today = new Date().toISOString().split('T')[0]
     const tasks = []
 
