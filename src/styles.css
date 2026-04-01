@@ -66,15 +66,18 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  background: rgba(13, 13, 18, 0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.topbar-row {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 20px;
   height: 52px;
-  background: rgba(13, 13, 18, 0.95);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
 .topbar-brand {
@@ -110,6 +113,16 @@ body {
   font-size: 11px;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* Hamburger — hidden on desktop */
+.topbar-hamburger {
+  display: none;
+}
+
+/* Mobile nav dropdown — hidden on desktop */
+.topbar-mobile-nav {
+  display: none;
 }
 
 .nav-pill {
@@ -767,26 +780,87 @@ textarea.input {
     padding: 16px 14px 80px;
   }
 
-  /* Topbar — stack brand above nav on very small screens */
-  .topbar {
-    flex-wrap: wrap;
-    height: auto;
-    padding: 10px 14px 0;
-    gap: 6px;
+  /* Topbar — compact header with hamburger menu */
+  .topbar-row {
+    height: 48px;
+    padding: 0 14px;
   }
   .topbar-brand {
     font-size: 11px;
-    flex: 0 0 auto;
-    padding-bottom: 2px;
   }
-  .topbar-nav {
-    width: 100%;
-    padding-bottom: 8px;
+  /* Hide desktop nav and right section on mobile */
+  .topbar-nav,
+  .topbar-right {
+    display: none;
+  }
+  /* Show hamburger */
+  .topbar-hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: auto;
+    padding: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .topbar-hamburger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--text-muted);
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+  .topbar.menu-open .topbar-hamburger span:nth-child(1) {
+    transform: rotate(45deg) translate(4px, 4px);
+  }
+  .topbar.menu-open .topbar-hamburger span:nth-child(2) {
+    opacity: 0;
+  }
+  .topbar.menu-open .topbar-hamburger span:nth-child(3) {
+    transform: rotate(-45deg) translate(4px, -4px);
+  }
+  /* Mobile dropdown nav */
+  .topbar.menu-open .topbar-mobile-nav {
+    display: flex;
+  }
+  .topbar-mobile-nav {
+    display: none;
+    flex-direction: column;
+    padding: 8px 14px 14px;
     gap: 2px;
+    border-top: 1px solid var(--border);
   }
-  .nav-pill {
-    font-size: 12px;
-    padding: 5px 10px;
+  .mobile-nav-link {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav-link:hover,
+  .mobile-nav-link:active {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .mobile-nav-link.active {
+    color: var(--accent);
+    background: rgba(0, 212, 255, 0.08);
+    font-weight: 600;
+  }
+  .mobile-nav-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 2px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
   }
 
   /* Typography */
@@ -887,7 +961,6 @@ textarea.input {
 
 @media (max-width: 400px) {
   /* Extra small — very tight */
-  .nav-pill { font-size: 11px; padding: 4px 8px; }
   .counter-pipeline { grid-template-columns: 1fr 1fr; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
 }
@@ -1326,6 +1399,43 @@ textarea.input {
 
 /* ---- Mobile Overrides (Tasks) ---- */
 @media (max-width: 768px) {
+  .tasks-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .tasks-header .person-toggle {
+    width: 100%;
+  }
+  .person-toggle .btn {
+    flex: 1;
+  }
+  .date-navigator {
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+  .date-navigator-label {
+    min-width: auto;
+    font-size: 12px;
+    order: 10;
+    width: 100%;
+    text-align: center;
+  }
+  .section-chips {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .section-chip {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  .tab-toggle {
+    width: 100%;
+  }
+  .tab-toggle-btn {
+    flex: 1;
+  }
   .kanban-board {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1333,14 +1443,13 @@ textarea.input {
   .kanban-column {
     min-height: auto;
   }
+  .kanban-card {
+    padding: 10px 12px;
+  }
   .schedule-time {
     width: 56px;
     font-size: 11px;
     padding: 8px 6px;
-  }
-  .date-navigator-label {
-    min-width: auto;
-    font-size: 12px;
   }
   .add-task-bar {
     flex-direction: column;
@@ -1349,5 +1458,10 @@ textarea.input {
   .add-task-bar .input,
   .add-task-bar .select {
     width: 100% !important;
+  }
+  .task-modal {
+    width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
   }
 }
