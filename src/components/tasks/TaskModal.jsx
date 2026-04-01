@@ -44,6 +44,7 @@ export default function TaskModal({ task, onSave, onClose, clients }) {
     e.preventDefault()
     onSave(task.id, {
       ...form,
+      dueDate: form.dueDate || null,
       sectionRefId: form.section === 'clients' ? (form.sectionRefId || null) : null,
       scheduledTime: form.scheduledTime || null,
       completedAt: form.status === 'done' && task.status !== 'done'
@@ -110,7 +111,14 @@ export default function TaskModal({ task, onSave, onClose, clients }) {
           <div className="row" style={{ gap: 12 }}>
             <label className="form-label" style={{ flex: 1 }}>
               Due Date
-              <input type="date" className="input" value={form.dueDate} onChange={set('dueDate')} />
+              <div className="row" style={{ gap: 6 }}>
+                <input type="date" className="input" value={form.dueDate} onChange={set('dueDate')} style={{ flex: 1 }} />
+                {form.dueDate && (
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 8px' }} onClick={() => setForm(f => ({ ...f, dueDate: '' }))}>
+                    Clear
+                  </button>
+                )}
+              </div>
             </label>
             <label className="form-label" style={{ flex: 1 }}>
               Scheduled Time

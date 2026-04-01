@@ -28,7 +28,7 @@ export default function AddTaskBar({ onAdd, defaultSection, defaultDate, clients
       assignee,
       section,
       sectionRefId: section === 'clients' ? clientId : null,
-      dueDate,
+      dueDate: dueDate || null,
       scheduledTime: null,
       duration: 60,
       priority,

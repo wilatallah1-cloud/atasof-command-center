@@ -32,6 +32,7 @@ export default function Tasks() {
   const [sectionFilter, setSectionFilter] = useState('all')
   const [editingTask, setEditingTask] = useState(null)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [showBacklog, setShowBacklog] = useState(false)
 
   const tasks = data.tasks || []
   const settings = data.tasksSettings || {
@@ -55,9 +56,13 @@ export default function Tasks() {
     }
   }, [])
 
-  // Filter tasks by date, person, and section
+  // Filter tasks by date (or no date for backlog), person, and section
   const filtered = tasks.filter(t => {
-    if (t.dueDate !== selectedDate) return false
+    if (showBacklog) {
+      if (t.dueDate) return false
+    } else {
+      if (t.dueDate !== selectedDate) return false
+    }
     if (person !== 'all') {
       if (person === 'william' && t.assignee !== 'William' && t.assignee !== 'Both') return false
       if (person === 'fadi' && t.assignee !== 'Fadi' && t.assignee !== 'Both') return false
@@ -65,6 +70,8 @@ export default function Tasks() {
     if (sectionFilter !== 'all' && t.section !== sectionFilter) return false
     return true
   })
+
+  const backlogCount = tasks.filter(t => !t.dueDate).length
 
   function handleStatusChange(taskId, newStatus) {
     const updates = { status: newStatus }
@@ -78,7 +85,7 @@ export default function Tasks() {
   }
 
   function handleAddTask(task) {
-    addToArray('tasks', { ...task, dueDate: selectedDate })
+    addToArray('tasks', { ...task, dueDate: task.dueDate || (showBacklog ? null : selectedDate) })
   }
 
   function handleDeleteTask(taskId) {
@@ -113,16 +120,25 @@ export default function Tasks() {
 
       {/* Date navigator */}
       <div className="date-navigator">
-        <button className="btn btn-ghost" onClick={() => navigateDate(-1)}>←</button>
+        <button className="btn btn-ghost" onClick={() => { setShowBacklog(false); navigateDate(-1) }}>←</button>
         <button
-          className={`btn ${isToday(selectedDate) ? 'btn-accent' : 'btn-outline'}`}
-          onClick={() => setSelectedDate(todayStr)}
+          className={`btn ${!showBacklog && isToday(selectedDate) ? 'btn-accent' : 'btn-outline'}`}
+          onClick={() => { setShowBacklog(false); setSelectedDate(todayStr) }}
           style={{ minWidth: 60 }}
         >
           Today
         </button>
-        <span className="date-navigator-label">{formatDateLabel(selectedDate)}</span>
-        <button className="btn btn-ghost" onClick={() => navigateDate(1)}>→</button>
+        <span className="date-navigator-label">
+          {showBacklog ? 'Backlog' : formatDateLabel(selectedDate)}
+        </span>
+        <button className="btn btn-ghost" onClick={() => { setShowBacklog(false); navigateDate(1) }}>→</button>
+        <button
+          className={`btn ${showBacklog ? 'btn-accent' : 'btn-outline'}`}
+          onClick={() => setShowBacklog(b => !b)}
+          style={{ minWidth: 80 }}
+        >
+          Backlog{backlogCount > 0 ? ` (${backlogCount})` : ''}
+        </button>
       </div>
 
       {/* Section filter chips */}
@@ -168,7 +184,7 @@ export default function Tasks() {
       )}
 
       {/* Add task bar */}
-      <AddTaskBar onAdd={handleAddTask} defaultDate={selectedDate} clients={data.clients || []} />
+      <AddTaskBar onAdd={handleAddTask} defaultDate={showBacklog ? '' : selectedDate} clients={data.clients || []} />
 
       {/* Edit modal */}
       <TaskModal
