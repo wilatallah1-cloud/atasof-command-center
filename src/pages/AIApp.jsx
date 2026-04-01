@@ -7,7 +7,7 @@ import { GoalList } from '../components/EditableGoal'
 import NotionLinks from '../components/NotionLinks'
 
 export default function AIApp() {
-  const { data, setField, addToArray, removeFromArray, updateInArray, toggleTask } = useData()
+  const { data, setField, addToArray, removeFromArray, updateInArray } = useData()
   const d = data.aiSaas
 
   return (
@@ -48,30 +48,50 @@ export default function AIApp() {
         })}
       </div>
 
-      {d.phases.map((phase, i) => (
-        <div className="card" key={i}>
-          <div className="row-between" style={{ marginBottom: 12 }}>
-            <h2 style={{ margin: 0 }}>
-              Phase {i + 1} — <InlineEdit value={phase.name} onSave={v => {
-                const updated = [...d.phases]
-                updated[i] = { ...updated[i], name: v }
-                setField('aiSaas.phases', updated)
-              }} />
-            </h2>
-            <span className="mono small muted">
-              {phase.tasks.filter(t => t.completed).length}/{phase.tasks.length}
-            </span>
+      {d.phases.map((phase, i) => {
+        const phaseTasks = (data.tasks || []).filter(t => t.section === 'ai-app' && t.sectionRefId === String(i))
+        const phaseTasksDone = phaseTasks.filter(t => t.status === 'done').length
+        return (
+          <div className="card" key={i}>
+            <div className="row-between" style={{ marginBottom: 12 }}>
+              <h2 style={{ margin: 0 }}>
+                Phase {i + 1} — <InlineEdit value={phase.name} onSave={v => {
+                  const updated = [...d.phases]
+                  updated[i] = { ...updated[i], name: v }
+                  setField('aiSaas.phases', updated)
+                }} />
+              </h2>
+              <span className="mono small muted">
+                {phaseTasksDone}/{phaseTasks.length}
+              </span>
+            </div>
+            <TaskList tasks={phaseTasks.map(t => ({ ...t, completed: t.status === 'done' }))}
+              onToggle={id => {
+                const t = phaseTasks.find(x => x.id === id)
+                if (t) updateInArray('tasks', id, {
+                  status: t.status === 'done' ? 'todo' : 'done',
+                  completedAt: t.status === 'done' ? null : new Date().toISOString()
+                })
+              }}
+              onDelete={id => removeFromArray('tasks', id)}
+              onUpdate={(id, updates) => updateInArray('tasks', id, updates)}
+            />
+            <div style={{ marginTop: 8 }}>
+              <AddTaskForm onAdd={task => addToArray('tasks', {
+                ...task,
+                status: 'todo',
+                section: 'ai-app',
+                sectionRefId: String(i),
+                scheduledTime: null,
+                duration: 60,
+                priority: 'normal',
+                completedAt: null,
+                dueDate: task.dueDate || new Date().toISOString().split('T')[0],
+              })} />
+            </div>
           </div>
-          <TaskList tasks={phase.tasks}
-            onToggle={id => toggleTask(`aiSaas.phases.${i}.tasks`, id)}
-            onDelete={id => removeFromArray(`aiSaas.phases.${i}.tasks`, id)}
-            onUpdate={(id, updates) => updateInArray(`aiSaas.phases.${i}.tasks`, id, updates)}
-          />
-          <div style={{ marginTop: 8 }}>
-            <AddTaskForm onAdd={task => addToArray(`aiSaas.phases.${i}.tasks`, task)} />
-          </div>
-        </div>
-      ))}
+        )
+      })}
 
       <div className="card">
         <h2>Weekly Goals</h2>

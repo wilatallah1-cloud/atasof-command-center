@@ -30,20 +30,21 @@ OPERATION TYPES:
 - {"type":"add","path":"outreach.log","value":{"date":"2026-03-24","text":"..."}}
 - {"type":"prepend","path":"outreach.log","value":{"date":"2026-03-24","text":"..."}}
 - {"type":"remove","path":"ideas","id":"idea-1"}
-- {"type":"toggle","path":"outreach.todayChecklist","id":"oc-1"}
+- {"type":"toggle","path":"tasks","id":"task-123"}
 - {"type":"update","path":"ideas","id":"idea-1","value":{"text":"new text"}}
 
 PATH REFERENCE:
-- dashboard.todayFocus, dashboard.weeklyGoals, dashboard.recentActivity
+- tasks (centralized task array — ALL tasks live here now)
+- dashboard.weeklyGoals, dashboard.recentActivity
 - outreach.pipeline.leads/contacted/replied/meetingsBooked/closed
-- outreach.todayChecklist, outreach.weeklyGoals, outreach.monthlyGoals, outreach.statuses, outreach.log
-- clients (array — use clients.0.tasks, clients.1.notes, etc.)
-- aiSaas.phases.0.tasks, aiSaas.phases.1.tasks, etc., aiSaas.weeklyGoals, aiSaas.notes
-- coaching.tasks, coaching.weeklyGoals, coaching.monthlyRevenueGoals, coaching.log
+- outreach.weeklyGoals, outreach.monthlyGoals, outreach.statuses, outreach.log
+- clients (array — use clients.0.notes, etc.)
+- aiSaas.phases (phase names only), aiSaas.weeklyGoals, aiSaas.notes
+- coaching.weeklyGoals, coaching.monthlyRevenueGoals, coaching.log
 - youtube.pipeline.ideas/scripted/filmed/edited/published, youtube.stats, youtube.notes
 - ideas (top-level array)
 
-TASK FORMAT: {"id":"task-{timestamp}","title":"...","completed":false,"assignee":"William|Dad|Both","dueDate":"YYYY-MM-DD"} (dueDate optional)
+TASK FORMAT: {"id":"task-{timestamp}","title":"...","status":"todo|in-progress|done","assignee":"William|Fadi|Both","section":"dashboard|outreach|clients|ai-app|coaching|content","sectionRefId":null,"dueDate":"YYYY-MM-DD","scheduledTime":null,"duration":60,"priority":"low|normal|high","createdAt":"ISO-8601","completedAt":null}
 LOG/NOTE FORMAT: {"date":"YYYY-MM-DD","text":"..."}
 IDEA FORMAT: {"id":"idea-{timestamp}","text":"...","project":"Outreach|Clients|AI Content SaaS|Coaching|YouTube|Other","createdAt":"ISO-8601"}
 

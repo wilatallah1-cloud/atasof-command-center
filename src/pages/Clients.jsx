@@ -35,11 +35,12 @@ function getClientCashCollected(client) {
 }
 
 function ClientCard({ client, clientIdx }) {
-  const { data, setField, toggleTask, removeFromArray, updateInArray, addToArray } = useData()
+  const { data, setField, removeFromArray, updateInArray, addToArray } = useData()
   const [expanded, setExpanded] = useState(false)
   const path = `clients.${clientIdx}`
-  const doneTasks = client.tasks.filter(t => t.completed).length
-  const totalTasks = client.tasks.length
+  const clientTasks = (data.tasks || []).filter(t => t.section === 'clients' && t.sectionRefId === client.id)
+  const doneTasks = clientTasks.filter(t => t.status === 'done').length
+  const totalTasks = clientTasks.length
 
   const statusOptions = ['ACTIVE', 'NEEDS ATTENTION', 'WAITING ON CLIENT', 'NO LONGER ACTIVE']
 
@@ -155,13 +156,29 @@ function ClientCard({ client, clientIdx }) {
       {expanded && (
         <div style={{ marginTop: 12 }}>
           <h3>Tasks</h3>
-          <TaskList tasks={client.tasks}
-            onToggle={id => toggleTask(`${path}.tasks`, id)}
-            onDelete={id => removeFromArray(`${path}.tasks`, id)}
-            onUpdate={(id, updates) => updateInArray(`${path}.tasks`, id, updates)}
+          <TaskList tasks={clientTasks.map(t => ({ ...t, completed: t.status === 'done' }))}
+            onToggle={id => {
+              const t = clientTasks.find(x => x.id === id)
+              if (t) updateInArray('tasks', id, {
+                status: t.status === 'done' ? 'todo' : 'done',
+                completedAt: t.status === 'done' ? null : new Date().toISOString()
+              })
+            }}
+            onDelete={id => removeFromArray('tasks', id)}
+            onUpdate={(id, updates) => updateInArray('tasks', id, updates)}
           />
           <div style={{ marginTop: 8 }}>
-            <AddTaskForm onAdd={task => addToArray(`${path}.tasks`, task)} />
+            <AddTaskForm onAdd={task => addToArray('tasks', {
+              ...task,
+              status: 'todo',
+              section: 'clients',
+              sectionRefId: client.id,
+              scheduledTime: null,
+              duration: 60,
+              priority: 'normal',
+              completedAt: null,
+              dueDate: task.dueDate || new Date().toISOString().split('T')[0],
+            })} />
           </div>
 
           <div style={{ marginTop: 16 }}>

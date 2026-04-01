@@ -7,13 +7,13 @@ import { GoalList } from '../components/EditableGoal'
 import NotionLinks from '../components/NotionLinks'
 
 export default function Coaching() {
-  const { data, setField, addToArray, removeFromArray, updateInArray, toggleTask } = useData()
+  const { data, setField, addToArray, removeFromArray, updateInArray } = useData()
   const d = data.coaching
 
   return (
     <div className="stack">
       <div className="section-header">
-        <h1>Dad's Coaching Business</h1>
+        <h1>Fadi's Coaching Business</h1>
         <p className="section-desc">
           <InlineEdit value={d.description} onSave={v => setField('coaching.description', v)} />
         </p>
@@ -38,14 +38,37 @@ export default function Coaching() {
 
       <div className="card">
         <h2>Tasks</h2>
-        <TaskList tasks={d.tasks}
-          onToggle={id => toggleTask('coaching.tasks', id)}
-          onDelete={id => removeFromArray('coaching.tasks', id)}
-          onUpdate={(id, updates) => updateInArray('coaching.tasks', id, updates)}
-        />
-        <div style={{ marginTop: 8 }}>
-          <AddTaskForm onAdd={task => addToArray('coaching.tasks', task)} />
-        </div>
+        {(() => {
+          const coachingTasks = (data.tasks || []).filter(t => t.section === 'coaching')
+          return (
+            <>
+              <TaskList tasks={coachingTasks.map(t => ({ ...t, completed: t.status === 'done' }))}
+                onToggle={id => {
+                  const t = coachingTasks.find(x => x.id === id)
+                  if (t) updateInArray('tasks', id, {
+                    status: t.status === 'done' ? 'todo' : 'done',
+                    completedAt: t.status === 'done' ? null : new Date().toISOString()
+                  })
+                }}
+                onDelete={id => removeFromArray('tasks', id)}
+                onUpdate={(id, updates) => updateInArray('tasks', id, updates)}
+              />
+              <div style={{ marginTop: 8 }}>
+                <AddTaskForm onAdd={task => addToArray('tasks', {
+                  ...task,
+                  status: 'todo',
+                  section: 'coaching',
+                  sectionRefId: null,
+                  scheduledTime: null,
+                  duration: 60,
+                  priority: 'normal',
+                  completedAt: null,
+                  dueDate: task.dueDate || new Date().toISOString().split('T')[0],
+                })} />
+              </div>
+            </>
+          )
+        })()}
       </div>
 
       <div className="grid-2">

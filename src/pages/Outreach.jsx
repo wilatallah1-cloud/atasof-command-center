@@ -8,7 +8,7 @@ import { GoalList } from '../components/EditableGoal'
 import NotionLinks from '../components/NotionLinks'
 
 export default function Outreach() {
-  const { data, setField, addToArray, removeFromArray, updateInArray, toggleTask } = useData()
+  const { data, setField, addToArray, removeFromArray, updateInArray } = useData()
   const d = data.outreach
   const p = d.pipeline
 
@@ -72,14 +72,37 @@ export default function Outreach() {
       <div className="grid-2">
         <div className="card">
           <h2>Today's Checklist</h2>
-          <TaskList tasks={d.todayChecklist} showDue={false}
-            onToggle={id => toggleTask('outreach.todayChecklist', id)}
-            onDelete={id => removeFromArray('outreach.todayChecklist', id)}
-            onUpdate={(id, updates) => updateInArray('outreach.todayChecklist', id, updates)}
-          />
-          <div style={{ marginTop: 8 }}>
-            <AddTaskForm onAdd={task => addToArray('outreach.todayChecklist', task)} placeholder="Add checklist item..." />
-          </div>
+          {(() => {
+            const outreachTasks = (data.tasks || []).filter(t => t.section === 'outreach')
+            return (
+              <>
+                <TaskList tasks={outreachTasks.map(t => ({ ...t, completed: t.status === 'done' }))} showDue={false}
+                  onToggle={id => {
+                    const t = outreachTasks.find(x => x.id === id)
+                    if (t) updateInArray('tasks', id, {
+                      status: t.status === 'done' ? 'todo' : 'done',
+                      completedAt: t.status === 'done' ? null : new Date().toISOString()
+                    })
+                  }}
+                  onDelete={id => removeFromArray('tasks', id)}
+                  onUpdate={(id, updates) => updateInArray('tasks', id, updates)}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <AddTaskForm onAdd={task => addToArray('tasks', {
+                    ...task,
+                    status: 'todo',
+                    section: 'outreach',
+                    sectionRefId: null,
+                    scheduledTime: null,
+                    duration: 60,
+                    priority: 'normal',
+                    completedAt: null,
+                    dueDate: task.dueDate || new Date().toISOString().split('T')[0],
+                  })} placeholder="Add checklist item..." />
+                </div>
+              </>
+            )
+          })()}
         </div>
 
         <div className="stack">

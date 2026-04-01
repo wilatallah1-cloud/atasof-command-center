@@ -49,58 +49,46 @@ function getClientCashCollected(client) {
   return setupFee + monthly * monthsBetween(client.startDate)
 }
 
-// Aggregate tasks from all pages that are due today
+// Aggregate tasks from centralized tasks array that are due today
 function getTodayTasks(data) {
-  const all = []
+  return (data.tasks || [])
+    .filter(t => t.dueDate === TODAY && t.status !== 'done')
+    .map(t => ({
+      ...t,
+      _source: SECTION_LABELS[t.section] || t.section,
+    }))
+}
 
-  // Dashboard own tasks
-  ;(data.dashboard.todayFocus || []).forEach(t => {
-    all.push({ ...t, _source: 'Dashboard', _path: 'dashboard.todayFocus', _type: 'focus' })
-  })
-
-  // Outreach checklist — always today
-  ;(data.outreach.todayChecklist || []).forEach(t => {
-    all.push({ ...t, _source: 'Outreach', _path: 'outreach.todayChecklist', _type: 'task' })
-  })
-
-  // AI App tasks due today
-  ;(data.aiSaas.phases || []).forEach((phase, i) => {
-    ;(phase.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
-      all.push({ ...t, _source: `AI App · ${phase.name}`, _path: `aiSaas.phases.${i}.tasks`, _type: 'task' })
-    })
-  })
-
-  // Coaching tasks due today
-  ;(data.coaching.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
-    all.push({ ...t, _source: 'Coaching', _path: 'coaching.tasks', _type: 'task' })
-  })
-
-  // Client tasks due today
-  ;(data.clients || []).forEach((client, ci) => {
-    ;(client.tasks || []).filter(t => t.dueDate === TODAY).forEach(t => {
-      all.push({ ...t, _source: client.name, _path: `clients.${ci}.tasks`, _type: 'task' })
-    })
-  })
-
-  return all
+const SECTION_LABELS = {
+  dashboard: 'Dashboard',
+  outreach: 'Outreach',
+  clients: 'Clients',
+  'ai-app': 'AI App',
+  coaching: 'Coaching',
+  content: 'Content',
 }
 
 function getProjectSummary(data) {
+  const tasks = data.tasks || []
   const summaries = []
-  const oc = data.outreach.todayChecklist
-  const ocDone = oc.filter(t => t.completed).length
-  summaries.push({ name: 'Outreach', pct: oc.length > 0 ? Math.round((ocDone / oc.length) * 100) : 0, next: `${data.outreach.pipeline.meetingsBooked} meetings booked` })
 
-  const allClientTasks = data.clients.flatMap(c => c.tasks || [])
-  const clientDone = allClientTasks.filter(t => t.completed).length
-  summaries.push({ name: 'Clients', pct: allClientTasks.length > 0 ? Math.round((clientDone / allClientTasks.length) * 100) : 0, next: data.clients[0]?.nextAction || 'No clients yet' })
+  function sectionStats(section) {
+    const s = tasks.filter(t => t.section === section)
+    const done = s.filter(t => t.status === 'done').length
+    return { total: s.length, done, pct: s.length > 0 ? Math.round((done / s.length) * 100) : 0 }
+  }
 
-  const allSaasTasks = data.aiSaas.phases.flatMap(p => p.tasks)
-  const saasDone = allSaasTasks.filter(t => t.completed).length
-  summaries.push({ name: 'AI App', pct: allSaasTasks.length > 0 ? Math.round((saasDone / allSaasTasks.length) * 100) : 0, next: allSaasTasks.find(t => !t.completed)?.title || 'No tasks yet' })
+  const outreach = sectionStats('outreach')
+  summaries.push({ name: 'Outreach', pct: outreach.pct, next: `${data.outreach.pipeline.meetingsBooked} meetings booked` })
 
-  const coachDone = data.coaching.tasks.filter(t => t.completed).length
-  summaries.push({ name: 'Coaching', pct: data.coaching.tasks.length > 0 ? Math.round((coachDone / data.coaching.tasks.length) * 100) : 0, next: data.coaching.tasks.find(t => !t.completed)?.title || 'No tasks yet' })
+  const clients = sectionStats('clients')
+  summaries.push({ name: 'Clients', pct: clients.pct, next: data.clients[0]?.nextAction || 'No clients yet' })
+
+  const aiApp = sectionStats('ai-app')
+  summaries.push({ name: 'AI App', pct: aiApp.pct, next: tasks.find(t => t.section === 'ai-app' && t.status !== 'done')?.title || 'No tasks yet' })
+
+  const coaching = sectionStats('coaching')
+  summaries.push({ name: 'Coaching', pct: coaching.pct, next: tasks.find(t => t.section === 'coaching' && t.status !== 'done')?.title || 'No tasks yet' })
 
   const ytPub = data.youtube.pipeline.published.length
   const ytTotal = Object.values(data.youtube.pipeline).flat().length
@@ -123,73 +111,72 @@ function sourceColor(src) {
   return 'var(--orange)'
 }
 
-const DESTINATIONS = [
+const SECTION_OPTIONS = [
   { label: 'Dashboard', value: 'dashboard' },
-  { label: 'Outreach Checklist', value: 'outreach' },
-  { label: 'AI App (current phase)', value: 'aisaas' },
+  { label: 'Outreach', value: 'outreach' },
+  { label: 'AI App', value: 'ai-app' },
   { label: 'Coaching', value: 'coaching' },
+  { label: 'Content', value: 'content' },
 ]
 
 export default function Dashboard() {
-  const { data, setField, addToArray, removeFromArray, updateInArray, toggleTask } = useData()
+  const { data, setField, addToArray, removeFromArray, updateInArray } = useData()
   const d = data.dashboard
   const summaries = getProjectSummary(data)
   const todayTasks = getTodayTasks(data)
 
   const [newTask, setNewTask] = useState('')
-  const [newDest, setNewDest] = useState('dashboard')
+  const [newSection, setNewSection] = useState('dashboard')
   const [newAssignee, setNewAssignee] = useState('Both')
 
-  // Compute destinations including each client
-  const destinations = [
-    ...DESTINATIONS,
+  // Compute section options including each client
+  const sectionOptions = [
+    ...SECTION_OPTIONS,
     ...data.clients.map(c => ({ label: `Client: ${c.name}`, value: `client:${c.id}` }))
   ]
 
   function addTodayTask(e) {
     e.preventDefault()
     if (!newTask.trim()) return
-    const base = {
+    let section = newSection
+    let sectionRefId = null
+    if (newSection.startsWith('client:')) {
+      section = 'clients'
+      sectionRefId = newSection.replace('client:', '')
+    } else if (newSection === 'ai-app') {
+      sectionRefId = String(data.aiSaas.currentPhase)
+    }
+    addToArray('tasks', {
       id: `task-${Date.now()}`,
       title: newTask.trim(),
-      completed: false,
+      status: 'todo',
       assignee: newAssignee,
+      section,
+      sectionRefId,
       dueDate: TODAY,
+      scheduledTime: null,
+      duration: 60,
+      priority: 'normal',
       createdAt: new Date().toISOString(),
-    }
-
-    if (newDest === 'dashboard') {
-      addToArray('dashboard.todayFocus', { ...base, source: 'Dashboard' })
-    } else if (newDest === 'outreach') {
-      addToArray('outreach.todayChecklist', base)
-    } else if (newDest === 'aisaas') {
-      const phase = data.aiSaas.currentPhase
-      addToArray(`aiSaas.phases.${phase}.tasks`, base)
-    } else if (newDest === 'coaching') {
-      addToArray('coaching.tasks', base)
-    } else if (newDest.startsWith('client:')) {
-      const clientId = newDest.replace('client:', '')
-      const ci = data.clients.findIndex(c => c.id === clientId)
-      if (ci >= 0) addToArray(`clients.${ci}.tasks`, base)
-    }
-
+      completedAt: null,
+    })
     setNewTask('')
   }
 
   function toggleTodayTask(task) {
-    if (task._type === 'focus') {
-      // dashboard.todayFocus items use updateInArray
-      updateInArray(task._path, task.id, { completed: !task.completed })
-    } else {
-      toggleTask(task._path, task.id)
-    }
+    const newStatus = task.status === 'done' ? 'todo' : 'done'
+    updateInArray('tasks', task.id, {
+      status: newStatus,
+      completedAt: newStatus === 'done' ? new Date().toISOString() : null,
+    })
   }
 
   function deleteTodayTask(task) {
-    removeFromArray(task._path, task.id)
+    removeFromArray('tasks', task.id)
   }
 
-  const done = todayTasks.filter(t => t.completed).length
+  const allToday = (data.tasks || []).filter(t => t.dueDate === TODAY)
+  const done = allToday.filter(t => t.status === 'done').length
 
   // Revenue calculations
   const activeClients = data.clients.filter(c => c.status === 'ACTIVE')
@@ -247,17 +234,17 @@ export default function Dashboard() {
       <div className="card">
         <div className="row-between" style={{ marginBottom: 12 }}>
           <h2 style={{ margin: 0 }}>Today's Tasks</h2>
-          <span className="mono small muted">{done}/{todayTasks.length} done</span>
+          <span className="mono small muted">{done}/{allToday.length} done</span>
         </div>
 
         {todayTasks.length > 0 && (
           <div className="stack-sm" style={{ marginBottom: 12 }}>
             {todayTasks.map(task => (
-              <div key={`${task._path}-${task.id}`} className={`today-task-row${task.completed ? ' completed' : ''}`}>
+              <div key={task.id} className={`today-task-row${task.status === 'done' ? ' completed' : ''}`}>
                 <input
                   type="checkbox"
                   className="task-checkbox"
-                  checked={!!task.completed}
+                  checked={task.status === 'done'}
                   onChange={() => toggleTodayTask(task)}
                 />
                 <span className="today-task-title">{task.title}</span>
@@ -286,13 +273,13 @@ export default function Dashboard() {
             onChange={e => setNewTask(e.target.value)}
             style={{ flex: 1, minWidth: 160 }}
           />
-          <select className="select" value={newDest} onChange={e => setNewDest(e.target.value)} style={{ fontSize: 12 }}>
-            {destinations.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+          <select className="select" value={newSection} onChange={e => setNewSection(e.target.value)} style={{ fontSize: 12 }}>
+            {sectionOptions.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
           </select>
           <select className="select" value={newAssignee} onChange={e => setNewAssignee(e.target.value)} style={{ width: 90, fontSize: 12 }}>
             <option value="Both">Both</option>
             <option value="William">William</option>
-            <option value="Dad">Dad</option>
+            <option value="Fadi">Fadi</option>
           </select>
           <button type="submit" className="btn btn-accent" disabled={!newTask.trim()}>Add</button>
         </form>

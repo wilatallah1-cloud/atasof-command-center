@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { useData } from '../context/DataContext'
 import { AddIdeaForm } from '../components/AddItemForm'
 
-const PROJECT_TASK_PATHS = {
-  'Outreach': 'outreach.todayChecklist',
-  'Clients': null,
-  'AI Content SaaS': null,
-  'Coaching': 'coaching.tasks',
-  'YouTube': null,
-  'Other': 'dashboard.todayFocus',
+const PROJECT_TO_SECTION = {
+  'Outreach': 'outreach',
+  'Clients': 'clients',
+  'AI Content SaaS': 'ai-app',
+  'Coaching': 'coaching',
+  'YouTube': 'content',
+  'Other': 'dashboard',
 }
 
 export default function Ideas() {
@@ -25,32 +25,30 @@ export default function Ideas() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   function turnIntoTask(idea) {
-    const task = {
-      id: `task-${Date.now()}`,
-      title: idea.text,
-      completed: false,
-      createdAt: new Date().toISOString()
+    const section = PROJECT_TO_SECTION[idea.project] || 'dashboard'
+    let sectionRefId = null
+    if (section === 'ai-app') {
+      sectionRefId = String(data.aiSaas.currentPhase)
     }
 
-    const project = idea.project
-
-    if (project === 'Outreach') {
-      addToArray('outreach.todayChecklist', task)
-    } else if (project === 'AI Content SaaS') {
-      // Add to current phase's tasks
-      const phase = data.aiSaas.currentPhase
-      addToArray(`aiSaas.phases.${phase}.tasks`, task)
-    } else if (project === 'Coaching') {
-      addToArray('coaching.tasks', task)
-    } else if (project === 'YouTube') {
-      // Add as a video idea in the pipeline
+    // YouTube ideas go to the content pipeline instead
+    if (idea.project === 'YouTube') {
       setField('youtube.pipeline.ideas', [...data.youtube.pipeline.ideas, { id: `yt-${Date.now()}`, title: idea.text }])
-    } else if (project === 'Clients') {
-      // Add to dashboard today's focus since clients don't have a generic task list
-      addToArray('dashboard.todayFocus', { id: `tf-${Date.now()}`, title: idea.text, source: 'Clients' })
     } else {
-      // Other → dashboard today's focus
-      addToArray('dashboard.todayFocus', { id: `tf-${Date.now()}`, title: idea.text, source: 'Other' })
+      addToArray('tasks', {
+        id: `task-${Date.now()}`,
+        title: idea.text,
+        status: 'todo',
+        assignee: 'William',
+        section,
+        sectionRefId,
+        dueDate: new Date().toISOString().split('T')[0],
+        scheduledTime: null,
+        duration: 60,
+        priority: 'normal',
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+      })
     }
 
     setTurnedIds(prev => new Set([...prev, idea.id]))

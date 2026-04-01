@@ -9,6 +9,7 @@ import AIApp from './pages/AIApp'
 import Coaching from './pages/Coaching'
 import ContentCreation from './pages/ContentCreation'
 import Ideas from './pages/Ideas'
+import Tasks from './pages/Tasks'
 
 function AppContent() {
   const { data } = useData()
@@ -27,6 +28,7 @@ function AppContent() {
       <div className="page-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/tasks" element={<Tasks />} />
           <Route path="/outreach" element={<Outreach />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/ai-app" element={<AIApp />} />

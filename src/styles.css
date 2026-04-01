@@ -992,3 +992,362 @@ textarea.input {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* ============================================
+   TASKS PAGE
+   ============================================ */
+
+/* ---- Tasks Header ---- */
+.tasks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---- Person Toggle ---- */
+.person-toggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 2px;
+}
+.person-toggle-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.person-toggle-btn:hover {
+  color: var(--text);
+}
+.person-toggle-btn.active {
+  background: var(--accent);
+  color: #0D0D12;
+}
+
+/* ---- Date Navigator ---- */
+.date-navigator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.date-navigator-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  min-width: 200px;
+  text-align: center;
+}
+
+/* ---- Section Filter Chips ---- */
+.section-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.section-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.section-chip:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text);
+}
+.section-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+/* ---- Tab Toggle ---- */
+.tab-toggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 2px;
+  width: fit-content;
+}
+.tab-toggle-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tab-toggle-btn:hover {
+  color: var(--text);
+}
+.tab-toggle-btn.active {
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* ---- Kanban Board ---- */
+.kanban-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  min-height: 300px;
+}
+
+.kanban-column {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 200px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  border: 1px solid transparent;
+}
+.kanban-column.drag-over {
+  background: rgba(0, 212, 255, 0.04);
+  border-color: rgba(0, 212, 255, 0.2);
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.kanban-column-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kanban-column-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ---- Kanban Card ---- */
+.kanban-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: grab;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  touch-action: none;
+}
+.kanban-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.kanban-card:hover .kanban-card-delete {
+  opacity: 1;
+}
+.kanban-card.dragging {
+  opacity: 0.5;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+}
+.kanban-card-title {
+  font-size: 13px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.kanban-card-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--red);
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  line-height: 1;
+  padding: 2px;
+}
+
+/* ---- Add Task Bar ---- */
+.add-task-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+/* ---- Form Label ---- */
+.form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ---- Task Modal ---- */
+.task-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.task-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* ---- Schedule View ---- */
+.schedule-grid {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.schedule-slot {
+  display: flex;
+  align-items: stretch;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+.schedule-slot:last-child {
+  border-bottom: none;
+}
+.schedule-slot.peak {
+  border-left: 3px solid var(--accent);
+}
+.schedule-slot.drag-over {
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.schedule-time {
+  width: 80px;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.schedule-tasks {
+  flex: 1;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.schedule-drop-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  padding: 8px;
+  opacity: 0.6;
+}
+
+.peak-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+/* ---- Unscheduled Zone ---- */
+.schedule-unscheduled {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+.schedule-unscheduled.drag-over {
+  background: rgba(0, 212, 255, 0.04);
+}
+.schedule-unscheduled-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+/* ---- Mobile Overrides (Tasks) ---- */
+@media (max-width: 768px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .kanban-column {
+    min-height: auto;
+  }
+  .schedule-time {
+    width: 56px;
+    font-size: 11px;
+    padding: 8px 6px;
+  }
+  .date-navigator-label {
+    min-width: auto;
+    font-size: 12px;
+  }
+  .add-task-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .add-task-bar .input,
+  .add-task-bar .select {
+    width: 100% !important;
+  }
+}

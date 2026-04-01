@@ -150,6 +150,54 @@ function migrateData(d) {
       options: opts[key] || ['ON', 'OFF']
     }))
   }
+
+  // Migrate scattered tasks into centralized data.tasks array
+  if (!d.tasks) {
+    const today = new Date().toISOString().split('T')[0]
+    const tasks = []
+
+    function migrateTask(t, section, sectionRefId) {
+      return {
+        id: t.id || `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        title: t.title || t.text || '',
+        status: t.completed ? 'done' : 'todo',
+        assignee: t.assignee === 'Dad' ? 'Fadi' : (t.assignee || 'Both'),
+        section,
+        sectionRefId: sectionRefId || null,
+        dueDate: t.dueDate || today,
+        scheduledTime: null,
+        duration: 60,
+        priority: 'normal',
+        createdAt: t.createdAt || new Date().toISOString(),
+        completedAt: t.completed ? (t.createdAt || new Date().toISOString()) : null,
+      }
+    }
+
+    ;(d.dashboard?.todayFocus || []).forEach(t => tasks.push(migrateTask(t, 'dashboard', null)))
+    ;(d.outreach?.todayChecklist || []).forEach(t => tasks.push(migrateTask(t, 'outreach', null)))
+    ;(d.aiSaas?.phases || []).forEach((phase, i) => {
+      ;(phase.tasks || []).forEach(t => tasks.push(migrateTask(t, 'ai-app', String(i))))
+    })
+    ;(d.coaching?.tasks || []).forEach(t => tasks.push(migrateTask(t, 'coaching', null)))
+    ;(d.clients || []).forEach(client => {
+      ;(client.tasks || []).forEach(t => tasks.push(migrateTask(t, 'clients', client.id)))
+    })
+
+    d.tasks = tasks
+    d.tasksSettings = {
+      workStart: '10:00',
+      workEnd: '18:00',
+      peakStart: '11:00',
+      peakEnd: '13:30',
+      lastScheduleReset: today,
+    }
+  }
+
+  // Rename any remaining "Dad" assignees to "Fadi"
+  if (d.tasks) {
+    d.tasks.forEach(t => { if (t.assignee === 'Dad') t.assignee = 'Fadi' })
+  }
+
   return d
 }
 

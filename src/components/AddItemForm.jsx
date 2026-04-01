@@ -31,7 +31,7 @@ export function AddTaskForm({ onAdd, placeholder = 'Add a task...' }) {
       <select className="select" value={assignee} onChange={e => setAssignee(e.target.value)} style={{ width: 90, fontSize: 12 }}>
         <option value="Both">Both</option>
         <option value="William">William</option>
-        <option value="Dad">Dad</option>
+        <option value="Fadi">Fadi</option>
       </select>
       <input
         type="date"

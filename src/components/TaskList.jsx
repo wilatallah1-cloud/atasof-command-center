@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const ASSIGNEE_COLORS = {
   William: { bg: 'rgba(0,212,255,0.12)', color: '#00D4FF' },
-  Dad:     { bg: 'rgba(255,180,0,0.12)', color: '#FFB400' },
+  Fadi:    { bg: 'rgba(255,180,0,0.12)', color: '#FFB400' },
   Both:    { bg: 'rgba(255,255,255,0.06)', color: '#888' },
 }
 
@@ -23,7 +23,7 @@ export default function TaskList({ tasks, onToggle, onDelete, onUpdate, showDue 
   }
 
   function cycleAssignee(task) {
-    const order = ['Both', 'William', 'Dad']
+    const order = ['Both', 'William', 'Fadi']
     const current = task.assignee || 'Both'
     const next = order[(order.indexOf(current) + 1) % order.length]
     if (onUpdate) onUpdate(task.id, { assignee: next })
