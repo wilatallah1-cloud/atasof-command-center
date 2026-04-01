@@ -22,7 +22,7 @@ const PRIORITY_LABELS = {
   low: { text: 'LOW', color: '#888' },
 }
 
-export default function KanbanCard({ task, onEdit, onDelete }) {
+export default function KanbanCard({ task, onEdit, onDelete, isParent, isOrphan, children }) {
   const {
     attributes,
     listeners,
@@ -48,7 +48,7 @@ export default function KanbanCard({ task, onEdit, onDelete }) {
       style={style}
       {...attributes}
       {...listeners}
-      className={`kanban-card${isDragging ? ' dragging' : ''}`}
+      className={`kanban-card${isDragging ? ' dragging' : ''}${isParent ? ' is-parent' : ''}${isOrphan ? ' is-subtask' : ''}`}
       onDoubleClick={() => onEdit?.(task)}
     >
       <div className="kanban-card-title">{task.title}</div>
@@ -69,6 +69,7 @@ export default function KanbanCard({ task, onEdit, onDelete }) {
             {task.scheduledTime}
           </span>
         )}
+        {children}
       </div>
       <button
         className="kanban-card-delete"

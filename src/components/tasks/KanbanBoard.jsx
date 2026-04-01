@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/core'
 import KanbanColumn from './KanbanColumn'
 
-export default function KanbanBoard({ tasks, onStatusChange, onEdit, onDelete }) {
+export default function KanbanBoard({ tasks, allTasks, onStatusChange, onEdit, onDelete }) {
   const [activeTask, setActiveTask] = useState(null)
 
   const sensors = useSensors(
@@ -56,9 +56,9 @@ export default function KanbanBoard({ tasks, onStatusChange, onEdit, onDelete })
       onDragEnd={handleDragEnd}
     >
       <div className="kanban-board">
-        <KanbanColumn status="todo" tasks={columns.todo} onEdit={onEdit} onDelete={onDelete} />
-        <KanbanColumn status="in-progress" tasks={columns['in-progress']} onEdit={onEdit} onDelete={onDelete} />
-        <KanbanColumn status="done" tasks={columns.done} onEdit={onEdit} onDelete={onDelete} />
+        <KanbanColumn status="todo" tasks={columns.todo} allTasks={allTasks || tasks} onEdit={onEdit} onDelete={onDelete} onStatusChange={onStatusChange} />
+        <KanbanColumn status="in-progress" tasks={columns['in-progress']} allTasks={allTasks || tasks} onEdit={onEdit} onDelete={onDelete} onStatusChange={onStatusChange} />
+        <KanbanColumn status="done" tasks={columns.done} allTasks={allTasks || tasks} onEdit={onEdit} onDelete={onDelete} onStatusChange={onStatusChange} />
       </div>
       <DragOverlay>
         {activeTask ? (

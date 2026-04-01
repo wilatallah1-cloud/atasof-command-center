@@ -9,11 +9,12 @@ const SECTIONS = [
   { value: 'content', label: 'Content' },
 ]
 
-export default function TaskModal({ task, onSave, onClose, clients }) {
+export default function TaskModal({ task, onSave, onClose, clients, parentTasks }) {
   const [form, setForm] = useState({
     title: '',
     section: 'dashboard',
     sectionRefId: '',
+    parentId: '',
     assignee: 'William',
     priority: 'normal',
     dueDate: '',
@@ -28,6 +29,7 @@ export default function TaskModal({ task, onSave, onClose, clients }) {
         title: task.title || '',
         section: task.section || 'dashboard',
         sectionRefId: task.sectionRefId || '',
+        parentId: task.parentId || '',
         assignee: task.assignee || 'William',
         priority: task.priority || 'normal',
         dueDate: task.dueDate || '',
@@ -40,11 +42,15 @@ export default function TaskModal({ task, onSave, onClose, clients }) {
 
   if (!task) return null
 
+  // Don't show self in parent options
+  const availableParents = (parentTasks || []).filter(t => t.id !== task.id)
+
   function handleSubmit(e) {
     e.preventDefault()
     onSave(task.id, {
       ...form,
       dueDate: form.dueDate || null,
+      parentId: form.parentId || null,
       sectionRefId: form.section === 'clients' ? (form.sectionRefId || null) : null,
       scheduledTime: form.scheduledTime || null,
       completedAt: form.status === 'done' && task.status !== 'done'
@@ -87,6 +93,17 @@ export default function TaskModal({ task, onSave, onClose, clients }) {
               <select className="select" value={form.sectionRefId} onChange={set('sectionRefId')}>
                 <option value="">Select client...</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
+          )}
+          {availableParents.length > 0 && (
+            <label className="form-label">
+              Parent Task
+              <select className="select" value={form.parentId} onChange={set('parentId')}>
+                <option value="">None (standalone)</option>
+                {availableParents.map(t => (
+                  <option key={t.id} value={t.id}>{t.title.length > 50 ? t.title.slice(0, 50) + '...' : t.title}</option>
+                ))}
               </select>
             </label>
           )}

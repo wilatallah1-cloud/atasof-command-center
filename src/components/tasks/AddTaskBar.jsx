@@ -9,13 +9,14 @@ const SECTIONS = [
   { value: 'content', label: 'Content' },
 ]
 
-export default function AddTaskBar({ onAdd, defaultSection, defaultDate, clients }) {
+export default function AddTaskBar({ onAdd, defaultSection, defaultDate, clients, parentTasks }) {
   const [title, setTitle] = useState('')
   const [section, setSection] = useState(defaultSection || 'dashboard')
   const [clientId, setClientId] = useState('')
   const [assignee, setAssignee] = useState('William')
   const [priority, setPriority] = useState('normal')
   const [dueDate, setDueDate] = useState(defaultDate || new Date().toISOString().split('T')[0])
+  const [parentId, setParentId] = useState('')
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -28,6 +29,7 @@ export default function AddTaskBar({ onAdd, defaultSection, defaultDate, clients
       assignee,
       section,
       sectionRefId: section === 'clients' ? clientId : null,
+      parentId: parentId || null,
       dueDate: dueDate || null,
       scheduledTime: null,
       duration: 60,
@@ -54,6 +56,14 @@ export default function AddTaskBar({ onAdd, defaultSection, defaultDate, clients
         <select className="select" value={clientId} onChange={e => setClientId(e.target.value)}>
           <option value="">Select client...</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      )}
+      {parentTasks?.length > 0 && (
+        <select className="select" value={parentId} onChange={e => setParentId(e.target.value)}>
+          <option value="">No parent</option>
+          {parentTasks.map(t => (
+            <option key={t.id} value={t.id}>{t.title.length > 30 ? t.title.slice(0, 30) + '...' : t.title}</option>
+          ))}
         </select>
       )}
       <select className="select" value={assignee} onChange={e => setAssignee(e.target.value)}>

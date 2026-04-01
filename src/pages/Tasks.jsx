@@ -168,6 +168,7 @@ export default function Tasks() {
       {tab === 'kanban' ? (
         <KanbanBoard
           tasks={filtered}
+          allTasks={tasks}
           onStatusChange={handleStatusChange}
           onEdit={setEditingTask}
           onDelete={handleDeleteTask}
@@ -184,7 +185,7 @@ export default function Tasks() {
       )}
 
       {/* Add task bar */}
-      <AddTaskBar onAdd={handleAddTask} defaultDate={showBacklog ? '' : selectedDate} clients={data.clients || []} />
+      <AddTaskBar onAdd={handleAddTask} defaultDate={showBacklog ? '' : selectedDate} clients={data.clients || []} parentTasks={tasks.filter(t => !t.parentId)} />
 
       {/* Edit modal */}
       <TaskModal
@@ -192,6 +193,7 @@ export default function Tasks() {
         onSave={handleEditSave}
         onClose={() => setEditingTask(null)}
         clients={data.clients || []}
+        parentTasks={tasks.filter(t => !t.parentId)}
       />
     </div>
   )

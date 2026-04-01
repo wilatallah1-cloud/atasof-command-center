@@ -1267,6 +1267,66 @@ textarea.input {
   padding: 2px;
 }
 
+/* ---- Parent/Subtask Grouping ---- */
+.kanban-parent-group {
+  margin-bottom: 8px;
+}
+.kanban-parent-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  cursor: pointer;
+  position: relative;
+}
+.kanban-parent-arrow {
+  position: absolute;
+  left: -2px;
+  top: 11px;
+  font-size: 10px;
+  color: var(--text-muted);
+  z-index: 1;
+  width: 14px;
+  text-align: center;
+}
+.kanban-parent-header .kanban-card {
+  flex: 1;
+  border-left: 2px solid var(--accent);
+  padding-left: 16px;
+}
+.kanban-card.is-parent .kanban-card-title {
+  font-weight: 600;
+}
+.kanban-subtask-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.kanban-subtask-indent {
+  margin-left: 18px;
+  position: relative;
+}
+.kanban-subtask-indent::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.kanban-subtask-indent .kanban-card {
+  border-left: 1px solid var(--border);
+  border-radius: 4px 8px 8px 4px;
+}
+.kanban-card.is-subtask {
+  opacity: 0.8;
+  border-left: 1px dashed var(--text-dim);
+  border-radius: 4px 8px 8px 4px;
+}
+
 /* ---- Add Task Bar ---- */
 .add-task-bar {
   display: flex;
