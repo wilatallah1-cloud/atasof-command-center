@@ -30,6 +30,7 @@ export default function TaskModal({ task, onSave, onClose, clients, parentTasks 
         section: task.section || 'dashboard',
         sectionRefId: task.sectionRefId || '',
         parentId: task.parentId || '',
+        notes: task.notes || '',
         assignee: task.assignee || 'William',
         priority: task.priority || 'normal',
         dueDate: task.dueDate || '',
@@ -145,6 +146,10 @@ export default function TaskModal({ task, onSave, onClose, clients, parentTasks 
           <label className="form-label">
             Duration (minutes)
             <input type="number" className="input" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) || 60 }))} min={15} step={15} />
+          </label>
+          <label className="form-label">
+            Notes
+            <textarea className="input" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={4} style={{ resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} placeholder="Description, links, outcome, next steps..." />
           </label>
           <div className="row" style={{ justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>

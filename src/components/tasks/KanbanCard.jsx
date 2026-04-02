@@ -69,6 +69,11 @@ export default function KanbanCard({ task, onEdit, onDelete, isParent, isOrphan,
             {task.scheduledTime}
           </span>
         )}
+        {task.notes && (
+          <span className="source-badge" style={{ background: 'rgba(255,255,255,0.06)', color: '#888' }}>
+            notes
+          </span>
+        )}
         {children}
       </div>
       <button
