@@ -42,11 +42,10 @@ function monthsBetween(startStr, endStr) {
 function getClientCashCollected(client) {
   if (client.status === 'WAITING ON CLIENT') return 0
   const revenueLog = client.revenueLog || []
+  const loggedTotal = revenueLog.reduce((sum, e) => sum + (e.amount || 0), 0)
+  if (loggedTotal > 0) return loggedTotal
   const setupFee = parseCAD(client.setupFee)
-  if (revenueLog.length > 0) {
-    return setupFee + revenueLog.reduce((sum, e) => sum + (e.amount || 0), 0)
-  }
-  const monthly = parseCAD(client.monthly)
+  const monthly = client.dealType === 'revshare' ? (client.revshareBase || 0) : parseCAD(client.monthly)
   if (client.status === 'NO LONGER ACTIVE') {
     return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
   }
@@ -72,22 +71,14 @@ function getClientMRR(client) {
 }
 
 function getClientRevenueThisMonth(client) {
+  if (client.status === 'WAITING ON CLIENT' || client.status === 'NO LONGER ACTIVE') return 0
   const curMonth = getCurrentMonth()
   const loggedThisMonth = (client.revenueLog || [])
     .filter(e => e.month === curMonth)
     .reduce((s, e) => s + (e.amount || 0), 0)
-  if (loggedThisMonth === 0 && client.status === 'ACTIVE' && client.dealType !== 'revshare') {
-    return parseCAD(client.monthly)
-  }
-  return loggedThisMonth
-}
-
-function getSetupFeesThisMonth(clients) {
-  const curMonth = getCurrentMonth()
-  return clients.reduce((sum, c) => {
-    if (c.startDate && c.startDate.slice(0, 7) === curMonth) return sum + parseCAD(c.setupFee)
-    return sum
-  }, 0)
+  if (loggedThisMonth > 0) return loggedThisMonth
+  if (client.dealType === 'revshare') return client.revshareBase || 0
+  return parseCAD(client.monthly)
 }
 
 // Aggregate tasks from centralized tasks array that are due today
@@ -225,7 +216,7 @@ export default function Dashboard() {
   const mrrGoal = data.mrrGoal || 5000
   const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
   const totalCashCollected = data.clients.reduce((sum, c) => sum + getClientCashCollected(c), 0)
-  const madeThisMonth = data.clients.reduce((sum, c) => sum + getClientRevenueThisMonth(c), 0) + getSetupFeesThisMonth(data.clients)
+  const madeThisMonth = data.clients.reduce((sum, c) => sum + getClientRevenueThisMonth(c), 0)
 
   return (
     <div className="stack">

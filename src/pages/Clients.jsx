@@ -28,14 +28,15 @@ function getClientCashCollected(client) {
   if (client.status === 'WAITING ON CLIENT') return 0
   const revenueLog = client.revenueLog || []
   const loggedTotal = revenueLog.reduce((sum, entry) => sum + (entry.amount || 0), 0)
-  const setupFee = parseCAD(client.setupFee)
 
-  if (revenueLog.length > 0) {
-    return setupFee + loggedTotal
+  // If there are actual logged payments, use those as source of truth
+  if (loggedTotal > 0) {
+    return loggedTotal
   }
 
-  // Fallback: estimate from monthly × months
-  const monthly = parseCAD(client.monthly)
+  // Fallback: estimate from setup + monthly × months
+  const setupFee = parseCAD(client.setupFee)
+  const monthly = client.dealType === 'revshare' ? (client.revshareBase || 0) : parseCAD(client.monthly)
   if (client.status === 'NO LONGER ACTIVE') {
     return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
   }
@@ -64,28 +65,20 @@ function getClientMRR(client) {
 }
 
 function getClientRevenueThisMonth(client) {
+  if (client.status === 'WAITING ON CLIENT' || client.status === 'NO LONGER ACTIVE') return 0
   const curMonth = getCurrentMonth()
   const revenueLog = client.revenueLog || []
   const loggedThisMonth = revenueLog
     .filter(e => e.month === curMonth)
     .reduce((s, e) => s + (e.amount || 0), 0)
 
-  // For flat clients without logs this month, count their monthly if active
-  if (loggedThisMonth === 0 && client.status === 'ACTIVE' && client.dealType !== 'revshare') {
-    return parseCAD(client.monthly)
+  if (loggedThisMonth > 0) return loggedThisMonth
+
+  // No logs this month — estimate from deal terms
+  if (client.dealType === 'revshare') {
+    return client.revshareBase || 0
   }
-
-  return loggedThisMonth
-}
-
-function getSetupFeesThisMonth(clients) {
-  const curMonth = getCurrentMonth()
-  return clients.reduce((sum, c) => {
-    if (c.startDate && c.startDate.slice(0, 7) === curMonth) {
-      return sum + parseCAD(c.setupFee)
-    }
-    return sum
-  }, 0)
+  return parseCAD(client.monthly)
 }
 
 function RevenueLogger({ client, path, setField }) {
@@ -94,7 +87,7 @@ function RevenueLogger({ client, path, setField }) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
   const [amount, setAmount] = useState('')
-  const [type, setType] = useState(client.dealType === 'revshare' ? 'base' : 'flat')
+  const [type, setType] = useState(client.dealType === 'revshare' ? 'base' : 'monthly')
   const [note, setNote] = useState('')
 
   function handleAdd(e) {
@@ -123,12 +116,12 @@ function RevenueLogger({ client, path, setField }) {
       <form className="add-form" onSubmit={handleAdd} style={{ gap: 8, marginBottom: 12 }}>
         <input type="month" className="input" value={month} onChange={e => setMonth(e.target.value)} style={{ width: 150 }} />
         <input type="number" className="input" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} style={{ width: 110 }} min="0" step="0.01" />
-        {client.dealType === 'revshare' && (
-          <select className="select" value={type} onChange={e => setType(e.target.value)}>
-            <option value="base">Base</option>
-            <option value="revshare">Rev Share</option>
-          </select>
-        )}
+        <select className="select" value={type} onChange={e => setType(e.target.value)}>
+          <option value="monthly">Monthly</option>
+          <option value="setup">Setup Fee</option>
+          {client.dealType === 'revshare' && <option value="base">Base</option>}
+          {client.dealType === 'revshare' && <option value="revshare">Rev Share</option>}
+        </select>
         <input className="input" placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} style={{ flex: 1 }} />
         <button type="submit" className="btn btn-accent">Log</button>
       </form>
@@ -138,15 +131,19 @@ function RevenueLogger({ client, path, setField }) {
             <div key={entry.id} className="revenue-log-entry">
               <span className="mono small">{entry.month}</span>
               <span className="mono small" style={{ color: 'var(--accent)', fontWeight: 600 }}>{formatCAD(entry.amount)}</span>
-              {entry.type !== 'flat' && (
-                <span className="source-badge" style={{
-                  background: entry.type === 'revshare' ? 'rgba(0,255,136,0.1)' : 'rgba(0,212,255,0.1)',
-                  color: entry.type === 'revshare' ? '#00FF88' : '#00D4FF',
-                  fontSize: 10,
-                }}>
-                  {entry.type === 'revshare' ? '% split' : 'base'}
-                </span>
-              )}
+              <span className="source-badge" style={{
+                background: entry.type === 'revshare' ? 'rgba(0,255,136,0.1)'
+                  : entry.type === 'setup' ? 'rgba(255,138,0,0.1)'
+                  : entry.type === 'base' ? 'rgba(0,212,255,0.1)'
+                  : 'rgba(255,255,255,0.06)',
+                color: entry.type === 'revshare' ? '#00FF88'
+                  : entry.type === 'setup' ? '#FF8A00'
+                  : entry.type === 'base' ? '#00D4FF'
+                  : '#888',
+                fontSize: 10,
+              }}>
+                {entry.type === 'revshare' ? '% split' : entry.type === 'setup' ? 'setup' : entry.type === 'base' ? 'base' : 'monthly'}
+              </span>
               {entry.note && <span className="small muted">{entry.note}</span>}
               <button
                 className="task-delete"
@@ -370,7 +367,7 @@ export default function Clients() {
   const mrrGoal = data.mrrGoal || 5000
   const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
   const totalCashCollected = data.clients.reduce((sum, c) => sum + getClientCashCollected(c), 0)
-  const madeThisMonth = data.clients.reduce((sum, c) => sum + getClientRevenueThisMonth(c), 0) + getSetupFeesThisMonth(data.clients)
+  const madeThisMonth = data.clients.reduce((sum, c) => sum + getClientRevenueThisMonth(c), 0)
 
   function addClient(e) {
     e.preventDefault()
