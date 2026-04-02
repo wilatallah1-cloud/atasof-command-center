@@ -53,20 +53,41 @@ function getClientCashCollected(client) {
   return setupFee + monthly * monthsBetween(client.startDate)
 }
 
+function getCurrentMonth() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
 function getClientMRR(client) {
   if (client.status !== 'ACTIVE') return 0
   if (client.dealType === 'revshare') {
     const base = client.revshareBase || 0
-    const varEntries = (client.revenueLog || [])
-      .filter(e => e.type === 'revshare')
-      .sort((a, b) => b.month.localeCompare(a.month))
-      .slice(0, 3)
-    const avgVar = varEntries.length > 0
-      ? varEntries.reduce((s, e) => s + (e.amount || 0), 0) / varEntries.length
-      : 0
-    return base + avgVar
+    const curMonth = getCurrentMonth()
+    const thisMonthShare = (client.revenueLog || [])
+      .filter(e => e.type === 'revshare' && e.month === curMonth)
+      .reduce((s, e) => s + (e.amount || 0), 0)
+    return base + thisMonthShare
   }
   return parseCAD(client.monthly)
+}
+
+function getClientRevenueThisMonth(client) {
+  const curMonth = getCurrentMonth()
+  const loggedThisMonth = (client.revenueLog || [])
+    .filter(e => e.month === curMonth)
+    .reduce((s, e) => s + (e.amount || 0), 0)
+  if (loggedThisMonth === 0 && client.status === 'ACTIVE' && client.dealType !== 'revshare') {
+    return parseCAD(client.monthly)
+  }
+  return loggedThisMonth
+}
+
+function getSetupFeesThisMonth(clients) {
+  const curMonth = getCurrentMonth()
+  return clients.reduce((sum, c) => {
+    if (c.startDate && c.startDate.slice(0, 7) === curMonth) return sum + parseCAD(c.setupFee)
+    return sum
+  }, 0)
 }
 
 // Aggregate tasks from centralized tasks array that are due today
@@ -204,6 +225,7 @@ export default function Dashboard() {
   const mrrGoal = data.mrrGoal || 5000
   const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
   const totalCashCollected = data.clients.reduce((sum, c) => sum + getClientCashCollected(c), 0)
+  const madeThisMonth = data.clients.reduce((sum, c) => sum + getClientRevenueThisMonth(c), 0) + getSetupFeesThisMonth(data.clients)
 
   return (
     <div className="stack">
@@ -229,8 +251,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div>
-            <div className="small muted" style={{ marginBottom: 4 }}>Total Cash Collected</div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Made This Month</div>
             <div style={{ fontSize: '1.3rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1, color: 'var(--green, #4ade80)' }}>
+              {formatCAD(madeThisMonth)}
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Total Cash Collected</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
               {formatCAD(totalCashCollected)}
             </div>
           </div>
