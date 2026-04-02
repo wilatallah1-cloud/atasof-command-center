@@ -26,12 +26,113 @@ function monthsBetween(startStr, endStr) {
 
 function getClientCashCollected(client) {
   if (client.status === 'WAITING ON CLIENT') return 0
-  const monthly = parseCAD(client.monthly)
+  const revenueLog = client.revenueLog || []
+  const loggedTotal = revenueLog.reduce((sum, entry) => sum + (entry.amount || 0), 0)
   const setupFee = parseCAD(client.setupFee)
+
+  if (revenueLog.length > 0) {
+    return setupFee + loggedTotal
+  }
+
+  // Fallback: estimate from monthly × months
+  const monthly = parseCAD(client.monthly)
   if (client.status === 'NO LONGER ACTIVE') {
     return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
   }
   return setupFee + monthly * monthsBetween(client.startDate)
+}
+
+function getClientMRR(client) {
+  if (client.status !== 'ACTIVE') return 0
+  const revenueLog = client.revenueLog || []
+
+  if (client.dealType === 'revshare') {
+    const base = client.revshareBase || 0
+    // Average the last 3 months of variable (non-base) revenue, or just base if no logs
+    const varEntries = revenueLog
+      .filter(e => e.type === 'revshare')
+      .sort((a, b) => b.month.localeCompare(a.month))
+      .slice(0, 3)
+    const avgVar = varEntries.length > 0
+      ? varEntries.reduce((s, e) => s + (e.amount || 0), 0) / varEntries.length
+      : 0
+    return base + avgVar
+  }
+
+  return parseCAD(client.monthly)
+}
+
+function RevenueLogger({ client, path, setField }) {
+  const [month, setMonth] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const [amount, setAmount] = useState('')
+  const [type, setType] = useState(client.dealType === 'revshare' ? 'base' : 'flat')
+  const [note, setNote] = useState('')
+
+  function handleAdd(e) {
+    e.preventDefault()
+    const val = parseFloat(amount)
+    if (!val || val <= 0) return
+    const log = client.revenueLog || []
+    const entry = {
+      id: `rev-${Date.now()}`,
+      month,
+      amount: val,
+      type,
+      note: note.trim() || null,
+      loggedAt: new Date().toISOString(),
+    }
+    setField(`${path}.revenueLog`, [entry, ...log])
+    setAmount('')
+    setNote('')
+  }
+
+  const log = (client.revenueLog || []).sort((a, b) => b.month.localeCompare(a.month))
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <h3>Revenue Log</h3>
+      <form className="add-form" onSubmit={handleAdd} style={{ gap: 8, marginBottom: 12 }}>
+        <input type="month" className="input" value={month} onChange={e => setMonth(e.target.value)} style={{ width: 150 }} />
+        <input type="number" className="input" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} style={{ width: 110 }} min="0" step="0.01" />
+        {client.dealType === 'revshare' && (
+          <select className="select" value={type} onChange={e => setType(e.target.value)}>
+            <option value="base">Base</option>
+            <option value="revshare">Rev Share</option>
+          </select>
+        )}
+        <input className="input" placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} style={{ flex: 1 }} />
+        <button type="submit" className="btn btn-accent">Log</button>
+      </form>
+      {log.length > 0 && (
+        <div className="revenue-log-list">
+          {log.map(entry => (
+            <div key={entry.id} className="revenue-log-entry">
+              <span className="mono small">{entry.month}</span>
+              <span className="mono small" style={{ color: 'var(--accent)', fontWeight: 600 }}>{formatCAD(entry.amount)}</span>
+              {entry.type !== 'flat' && (
+                <span className="source-badge" style={{
+                  background: entry.type === 'revshare' ? 'rgba(0,255,136,0.1)' : 'rgba(0,212,255,0.1)',
+                  color: entry.type === 'revshare' ? '#00FF88' : '#00D4FF',
+                  fontSize: 10,
+                }}>
+                  {entry.type === 'revshare' ? '% split' : 'base'}
+                </span>
+              )}
+              {entry.note && <span className="small muted">{entry.note}</span>}
+              <button
+                className="task-delete"
+                style={{ marginLeft: 'auto' }}
+                onClick={() => setField(`${path}.revenueLog`, (client.revenueLog || []).filter(e => e.id !== entry.id))}
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function ClientCard({ client, clientIdx }) {
@@ -43,8 +144,10 @@ function ClientCard({ client, clientIdx }) {
   const totalTasks = clientTasks.length
 
   const statusOptions = ['ACTIVE', 'NEEDS ATTENTION', 'WAITING ON CLIENT', 'NO LONGER ACTIVE']
+  const dealTypes = [{ value: 'flat', label: 'Flat Monthly' }, { value: 'revshare', label: 'Rev Share + Base' }]
 
   const ltv = getClientCashCollected(client)
+  const clientMrr = getClientMRR(client)
 
   function handleStatusChange(newStatus) {
     setField(`${path}.status`, newStatus)
@@ -61,6 +164,8 @@ function ClientCard({ client, clientIdx }) {
       setField('clients', data.clients.filter(c => c.id !== client.id))
     }
   }
+
+  const isRevShare = client.dealType === 'revshare'
 
   return (
     <div className="card">
@@ -83,11 +188,34 @@ function ClientCard({ client, clientIdx }) {
 
       <div style={{ display: 'flex', gap: 24, marginBottom: 12, flexWrap: 'wrap' }}>
         <div>
-          <div className="small muted" style={{ marginBottom: 2 }}>Monthly</div>
-          <div className="mono small">
-            <InlineEdit value={client.monthly || '$0 CAD'} onSave={v => setField(`${path}.monthly`, v)} />
-          </div>
+          <div className="small muted" style={{ marginBottom: 2 }}>Deal Type</div>
+          <select className="select" value={client.dealType || 'flat'} onChange={e => setField(`${path}.dealType`, e.target.value)} style={{ fontSize: 12 }}>
+            {dealTypes.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+          </select>
         </div>
+        {isRevShare ? (
+          <>
+            <div>
+              <div className="small muted" style={{ marginBottom: 2 }}>Base Monthly</div>
+              <div className="mono small">
+                <InlineEdit value={formatCAD(client.revshareBase || 0)} onSave={v => setField(`${path}.revshareBase`, parseCAD(v))} />
+              </div>
+            </div>
+            <div>
+              <div className="small muted" style={{ marginBottom: 2 }}>Rev Share %</div>
+              <div className="mono small">
+                <InlineEdit value={`${client.revsharePercent || 0}%`} onSave={v => setField(`${path}.revsharePercent`, parseFloat(v) || 0)} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div>
+            <div className="small muted" style={{ marginBottom: 2 }}>Monthly</div>
+            <div className="mono small">
+              <InlineEdit value={client.monthly || '$0 CAD'} onSave={v => setField(`${path}.monthly`, v)} />
+            </div>
+          </div>
+        )}
         <div>
           <div className="small muted" style={{ marginBottom: 2 }}>Setup Fee</div>
           <div className="mono small">
@@ -123,8 +251,14 @@ function ClientCard({ client, clientIdx }) {
           </div>
         )}
         <div>
+          <div className="small muted" style={{ marginBottom: 2 }}>Effective MRR</div>
+          <div className="mono small" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+            {formatCAD(clientMrr)}
+          </div>
+        </div>
+        <div>
           <div className="small muted" style={{ marginBottom: 2 }}>Cash Collected</div>
-          <div className="mono small" style={{ color: client.status === 'WAITING ON CLIENT' ? 'var(--text-muted)' : 'var(--accent)', fontWeight: 600 }}>
+          <div className="mono small" style={{ color: client.status === 'WAITING ON CLIENT' ? 'var(--text-muted)' : 'var(--green, #4ade80)', fontWeight: 600 }}>
             {formatCAD(ltv)}
           </div>
         </div>
@@ -181,6 +315,8 @@ function ClientCard({ client, clientIdx }) {
             })} />
           </div>
 
+          <RevenueLogger client={client} path={path} setField={setField} />
+
           <div style={{ marginTop: 16 }}>
             <h3>Notes</h3>
             <AddNoteForm onAdd={note => setField(`${path}.notes`, [note, ...(client.notes || [])])} />
@@ -204,9 +340,10 @@ export default function Clients() {
   const [newService, setNewService] = useState('')
 
   const activeClients = data.clients.filter(c => c.status === 'ACTIVE')
-  const mrr = activeClients.reduce((sum, c) => sum + parseCAD(c.monthly), 0)
+  const mrr = activeClients.reduce((sum, c) => sum + getClientMRR(c), 0)
   const mrrGoal = data.mrrGoal || 5000
   const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
+  const totalCashCollected = data.clients.reduce((sum, c) => sum + getClientCashCollected(c), 0)
 
   function addClient(e) {
     e.preventDefault()
@@ -216,9 +353,11 @@ export default function Clients() {
       name: newName.trim(),
       service: newService.trim() || 'TBD',
       status: 'ACTIVE',
+      dealType: 'flat',
       monthly: '$0 CAD',
       setupFee: '$0 CAD',
       startDate: new Date().toISOString().split('T')[0],
+      revenueLog: [],
       tasks: [],
       nextAction: 'Define scope',
       nextActionDue: null,
@@ -263,6 +402,12 @@ export default function Clients() {
             <div className="small muted" style={{ marginBottom: 4 }}>Active clients</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1 }}>
               {activeClients.length}
+            </div>
+          </div>
+          <div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Total Cash Collected</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)', lineHeight: 1, color: 'var(--green, #4ade80)' }}>
+              {formatCAD(totalCashCollected)}
             </div>
           </div>
           <div>

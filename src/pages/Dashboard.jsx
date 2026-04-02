@@ -41,12 +41,32 @@ function monthsBetween(startStr, endStr) {
 
 function getClientCashCollected(client) {
   if (client.status === 'WAITING ON CLIENT') return 0
-  const monthly = parseCAD(client.monthly)
+  const revenueLog = client.revenueLog || []
   const setupFee = parseCAD(client.setupFee)
+  if (revenueLog.length > 0) {
+    return setupFee + revenueLog.reduce((sum, e) => sum + (e.amount || 0), 0)
+  }
+  const monthly = parseCAD(client.monthly)
   if (client.status === 'NO LONGER ACTIVE') {
     return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
   }
   return setupFee + monthly * monthsBetween(client.startDate)
+}
+
+function getClientMRR(client) {
+  if (client.status !== 'ACTIVE') return 0
+  if (client.dealType === 'revshare') {
+    const base = client.revshareBase || 0
+    const varEntries = (client.revenueLog || [])
+      .filter(e => e.type === 'revshare')
+      .sort((a, b) => b.month.localeCompare(a.month))
+      .slice(0, 3)
+    const avgVar = varEntries.length > 0
+      ? varEntries.reduce((s, e) => s + (e.amount || 0), 0) / varEntries.length
+      : 0
+    return base + avgVar
+  }
+  return parseCAD(client.monthly)
 }
 
 // Aggregate tasks from centralized tasks array that are due today
@@ -180,7 +200,7 @@ export default function Dashboard() {
 
   // Revenue calculations
   const activeClients = data.clients.filter(c => c.status === 'ACTIVE')
-  const mrr = activeClients.reduce((sum, c) => sum + parseCAD(c.monthly), 0)
+  const mrr = activeClients.reduce((sum, c) => sum + getClientMRR(c), 0)
   const mrrGoal = data.mrrGoal || 5000
   const mrrProgress = Math.min(100, (mrr / mrrGoal) * 100)
   const totalCashCollected = data.clients.reduce((sum, c) => sum + getClientCashCollected(c), 0)
