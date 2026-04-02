@@ -28,13 +28,28 @@ function isPeakHour(time, peakStart, peakEnd) {
   return time >= peakStart && time < peakEnd
 }
 
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + (m || 0)
+}
+
 function getTasksForSlot(tasks, slotTime) {
-  const slotH = parseInt(slotTime.split(':')[0])
+  const slotStart = timeToMinutes(slotTime)
+  const slotEnd = slotStart + 60
   return tasks.filter(t => {
     if (!t.scheduledTime) return false
-    const taskH = parseInt(t.scheduledTime.split(':')[0])
-    return taskH === slotH
+    const taskStart = timeToMinutes(t.scheduledTime)
+    const taskEnd = taskStart + (t.duration || 60)
+    // Task overlaps this slot if it starts before slot ends and ends after slot starts
+    return taskStart < slotEnd && taskEnd > slotStart
   })
+}
+
+function isFirstSlotForTask(task, slotTime) {
+  if (!task.scheduledTime) return false
+  const taskH = parseInt(task.scheduledTime.split(':')[0])
+  const slotH = parseInt(slotTime.split(':')[0])
+  return taskH === slotH
 }
 
 export default function ScheduleView({ tasks, settings, onSchedule, onStatusChange, onEdit, onDelete }) {

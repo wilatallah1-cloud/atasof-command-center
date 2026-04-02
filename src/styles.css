@@ -1450,6 +1450,20 @@ textarea.input {
   opacity: 0.6;
 }
 
+.schedule-continuation {
+  background: rgba(0, 212, 255, 0.06);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 4px 10px;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.schedule-continuation-title {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
 .peak-label {
   font-family: var(--font-mono);
   font-size: 9px;
