@@ -27,20 +27,20 @@ function monthsBetween(startStr, endStr) {
 function getClientCashCollected(client) {
   if (client.status === 'WAITING ON CLIENT') return 0
   const revenueLog = client.revenueLog || []
-  const loggedTotal = revenueLog.reduce((sum, entry) => sum + (entry.amount || 0), 0)
+  const loggedExtra = revenueLog.reduce((sum, entry) => sum + (entry.amount || 0), 0)
 
-  // If there are actual logged payments, use those as source of truth
-  if (loggedTotal > 0) {
-    return loggedTotal
-  }
-
-  // Fallback: estimate from setup + monthly × months
+  // Base estimate: setup fee + monthly × months active
   const setupFee = parseCAD(client.setupFee)
   const monthly = client.dealType === 'revshare' ? (client.revshareBase || 0) : parseCAD(client.monthly)
+  let estimate = setupFee
   if (client.status === 'NO LONGER ACTIVE') {
-    return setupFee + monthly * monthsBetween(client.startDate, client.endDate)
+    estimate += monthly * monthsBetween(client.startDate, client.endDate)
+  } else {
+    estimate += monthly * monthsBetween(client.startDate)
   }
-  return setupFee + monthly * monthsBetween(client.startDate)
+
+  // Logged entries are additive (expansion setup fees, rev share splits, etc.)
+  return estimate + loggedExtra
 }
 
 function getCurrentMonth() {
@@ -72,13 +72,9 @@ function getClientRevenueThisMonth(client) {
     .filter(e => e.month === curMonth)
     .reduce((s, e) => s + (e.amount || 0), 0)
 
-  if (loggedThisMonth > 0) return loggedThisMonth
-
-  // No logs this month — estimate from deal terms
-  if (client.dealType === 'revshare') {
-    return client.revshareBase || 0
-  }
-  return parseCAD(client.monthly)
+  // Base monthly estimate + any logged extras this month
+  const monthly = client.dealType === 'revshare' ? (client.revshareBase || 0) : parseCAD(client.monthly)
+  return monthly + loggedThisMonth
 }
 
 function RevenueLogger({ client, path, setField }) {
